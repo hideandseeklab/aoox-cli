@@ -1,0 +1,67 @@
+name: Publish to npm
+
+# Runs on every version tag (v0.1.0-alpha.0, v1.2.3, ...). package.json's
+# `version` is the source of truth: `npm version <x>` bumps it and creates the
+# matching tag; `git push --follow-tags` sends both to GitHub, which triggers
+# this workflow.
+#
+# Authenticates via npm Trusted Publishing (OIDC) — no NPM_TOKEN secret. This
+# only works once the `aoox` package exists on npm AND has this exact repo +
+# workflow filename registered under its "Trusted publishing" settings on
+# npmjs.com. Until that's set up, the very first publish must be done manually
+# from a machine with npm 2FA (`npm publish --tag alpha`) — see RELEASING.md.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # required for npm OIDC trusted publishing
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm CLI >= 11.5.1; the version bundled with
+      # a given Node release isn't guaranteed to meet that yet.
+      - name: Update npm
+        run: npm install -g npm@latest
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      # Publish under the dist-tag matching the version's pre-release label
+      # (0.1.0-alpha.0 -> alpha, 0.1.0-beta.2 -> beta, 1.0.0-rc.1 -> rc),
+      # or "latest" for a version with no pre-release label at all — never
+      # publish an alpha/beta build under "latest".
+      - name: Derive npm dist-tag from version
+        id: tag
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [[ "$VERSION" == *-* ]]; then
+            TAG=$(echo "$VERSION" | sed -E 's/^[^-]+-([a-zA-Z]+).*/\1/')
+          else
+            TAG="latest"
+          fi
+          echo "Publishing $VERSION under dist-tag $TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Publish
+        run: npm publish --tag ${{ steps.tag.outputs.tag }}
