@@ -18,6 +18,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
   Settings → "Domain panel" (or `aoox domain set`) right away without an extra manual env edit.
 - `aoox registry domain --set <host>` / `--clear`: set or remove a custom domain for the
   self-hosted registry, calling the panel's new `PATCH /registries/:id/domain`.
+- `aoox update [--apply]`: check or apply an update for the panel itself, calling the panel's new
+  `GET /instance/update` / `POST /instance/update/apply`.
 - CI (`.github/workflows/ci.yml`): build + test (which already lints via `posttest`) on every pull
   request and push to `main` — previously the only workflow ran on version tags (npm publish), so
   a broken PR could merge unnoticed.

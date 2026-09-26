@@ -73,6 +73,7 @@ npm link            # or: npm install -g .
 * [`aoox plugins unlink [PLUGIN]`](#aoox-plugins-unlink-plugin)
 * [`aoox plugins update`](#aoox-plugins-update)
 * [`aoox registry domain`](#aoox-registry-domain)
+* [`aoox update`](#aoox-update)
 * [`aoox whoami`](#aoox-whoami)
 
 ## `aoox deploy`
@@ -542,6 +543,30 @@ EXAMPLES
 ```
 
 _See code: [src/commands/registry/domain.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.0/src/commands/registry/domain.ts)_
+
+## `aoox update`
+
+Cek atau terapkan update untuk panel aoox itu sendiri
+
+```
+USAGE
+  $ aoox update [-t <value>] [-u <value>] [--apply]
+
+FLAGS
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); default dari hasil `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] URL panel aoox; default dari hasil `aoox login`
+      --apply          Terapkan update jika tersedia (pull + restart)
+
+DESCRIPTION
+  Cek atau terapkan update untuk panel aoox itu sendiri
+
+EXAMPLES
+  $ aoox update
+
+  $ aoox update --apply
+```
+
+_See code: [src/commands/update.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.0/src/commands/update.ts)_
 
 ## `aoox whoami`
 
