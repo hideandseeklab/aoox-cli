@@ -72,6 +72,7 @@ npm link            # or: npm install -g .
 * [`aoox plugins uninstall [PLUGIN]`](#aoox-plugins-uninstall-plugin)
 * [`aoox plugins unlink [PLUGIN]`](#aoox-plugins-unlink-plugin)
 * [`aoox plugins update`](#aoox-plugins-update)
+* [`aoox registry domain`](#aoox-registry-domain)
 * [`aoox whoami`](#aoox-whoami)
 
 ## `aoox deploy`
@@ -516,6 +517,31 @@ DESCRIPTION
 ```
 
 _See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/5.5.2/src/commands/plugins/update.ts)_
+
+## `aoox registry domain`
+
+Set atau hapus domain kustom untuk registry self-hosted
+
+```
+USAGE
+  $ aoox registry domain [-t <value>] [-u <value>] [--clear] [--set <value>]
+
+FLAGS
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); default dari hasil `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] URL panel aoox; default dari hasil `aoox login`
+      --clear          Hapus domain, kembali ke host:port
+      --set=<value>    Domain untuk registry self-hosted
+
+DESCRIPTION
+  Set atau hapus domain kustom untuk registry self-hosted
+
+EXAMPLES
+  $ aoox registry domain --set registry.example.com
+
+  $ aoox registry domain --clear
+```
+
+_See code: [src/commands/registry/domain.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.0/src/commands/registry/domain.ts)_
 
 ## `aoox whoami`
 

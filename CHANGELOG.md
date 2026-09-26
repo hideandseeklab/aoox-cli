@@ -16,6 +16,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
   panel itself from the CLI, calling the panel's new `PATCH /instance/domain`.
 - `aoox install` now writes `INSTALL_DIR` into `.env.dist`, so a freshly installed panel can use
   Settings → "Domain panel" (or `aoox domain set`) right away without an extra manual env edit.
+- `aoox registry domain --set <host>` / `--clear`: set or remove a custom domain for the
+  self-hosted registry, calling the panel's new `PATCH /registries/:id/domain`.
 - CI (`.github/workflows/ci.yml`): build + test (which already lints via `posttest`) on every pull
   request and push to `main` — previously the only workflow ran on version tags (npm publish), so
   a broken PR could merge unnoticed.

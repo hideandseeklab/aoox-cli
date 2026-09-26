@@ -41,6 +41,7 @@ export interface ApplicationDetail extends Application {
 
 /** `GET /registries` → `RegistryDto` (never carries the password). */
 export interface Registry {
+  domain: null | string
   id: string
   imagePrefix: null | string
   name: string
