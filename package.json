@@ -1,8 +1,11 @@
 {
-  "name": "aoox",
+  "name": "@hideandseeklab/aoox",
   "description": "aoox CLI — build and deploy",
   "version": "0.1.0-alpha.0",
   "author": "hideandseeklab <hideandseek.developer@gmail.com>",
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "aoox": "./bin/run.js"
   },

@@ -27,6 +27,7 @@ describe('assets/install compose vs buildEnvFile coverage', () => {
     const env = buildEnvFile({
       dockerGid: '0',
       encryptionKey: 'x',
+      installDir: '/opt/aoox',
       jwtSecret: 'x',
       postgresPassword: 'x',
       publicApiUrl: 'http://x:3001',

@@ -7,6 +7,8 @@ export interface InstallEnvOptions {
   apiDomain?: string
   dockerGid: string
   encryptionKey: string
+  /** Absolute path of the install folder on this host — enables Settings -> "Domain panel". */
+  installDir: string
   jwtSecret: string
   postgresPassword: string
   publicApiUrl: string
@@ -40,6 +42,7 @@ export function buildEnvFile(o: InstallEnvOptions): string {
     `COOKIE_SECURE=`,
     `PUBLIC_IP=${o.publicIp ?? ''}`,
     `STORAGE_PATH=`,
+    `INSTALL_DIR=${o.installDir}`,
     '',
     `WEB_DOMAIN=${o.webDomain ?? ''}`,
     `API_DOMAIN=${o.apiDomain ?? ''}`,

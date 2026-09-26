@@ -5,8 +5,8 @@ CLI for [aoox](https://github.com/hideandseeklab/aoox-api), a self-hosted PaaS â
 
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![Version](https://img.shields.io/npm/v/aoox.svg)](https://npmjs.org/package/aoox)
-[![Downloads/week](https://img.shields.io/npm/dw/aoox.svg)](https://npmjs.org/package/aoox)
+[![Version](https://img.shields.io/npm/v/%40hideandseeklab%2Faoox.svg)](https://npmjs.org/package/@hideandseeklab/aoox)
+[![Downloads/week](https://img.shields.io/npm/dw/%40hideandseeklab%2Faoox.svg)](https://npmjs.org/package/@hideandseeklab/aoox)
 
 
 <!-- toc -->
@@ -17,11 +17,11 @@ CLI for [aoox](https://github.com/hideandseeklab/aoox-api), a self-hosted PaaS â
 # Usage
 <!-- usage -->
 ```sh-session
-$ npm install -g aoox
+$ npm install -g @hideandseeklab/aoox
 $ aoox COMMAND
 running command...
 $ aoox (--version)
-aoox/0.0.0 win32-x64 node-v24.19.0
+@hideandseeklab/aoox/0.1.0-alpha.0 win32-x64 node-v24.12.0
 $ aoox --help [COMMAND]
 USAGE
   $ aoox COMMAND
@@ -32,11 +32,11 @@ USAGE
 # Installation
 
 `aoox` is still in **alpha** â€” published to npm under the `alpha` dist-tag, not `latest`
-(the package has never had a stable release, so `npm install -g aoox` without a tag
-will fail to find a version). Install explicitly with this tag:
+(the package has never had a stable release, so `npm install -g @hideandseeklab/aoox` without a
+tag will fail to find a version). Install explicitly with this tag:
 
 ```sh-session
-npm install -g aoox@alpha
+npm install -g @hideandseeklab/aoox@alpha
 ```
 
 `aoox` is then available globally. This also applies to `aoox install` on a new VPS â€”
@@ -57,6 +57,7 @@ npm link            # or: npm install -g .
 # Commands
 <!-- commands -->
 * [`aoox deploy`](#aoox-deploy)
+* [`aoox domain set`](#aoox-domain-set)
 * [`aoox help [COMMAND]`](#aoox-help-command)
 * [`aoox install`](#aoox-install)
 * [`aoox link`](#aoox-link)
@@ -99,7 +100,33 @@ EXAMPLES
   $ aoox deploy --tag v1.2.3
 ```
 
-_See code: [src/commands/deploy.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.0.0/src/commands/deploy.ts)_
+_See code: [src/commands/deploy.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.0/src/commands/deploy.ts)_
+
+## `aoox domain set`
+
+Set domain kustom untuk panel itu sendiri (bukan aplikasi) lewat API panel yang sudah jalan
+
+```
+USAGE
+  $ aoox domain set --api <value> --web <value> [-t <value>] [-u <value>] [--acme-email <value>]
+
+FLAGS
+  -t, --token=<value>       [env: AOOX_TOKEN] API token (aoox_â€¦); default dari hasil `aoox login`
+  -u, --url=<value>         [env: AOOX_URL] URL panel aoox; default dari hasil `aoox login`
+      --acme-email=<value>  Email untuk sertifikat Let's Encrypt
+      --api=<value>         (required) Domain untuk API panel
+      --web=<value>         (required) Domain untuk dashboard panel
+
+DESCRIPTION
+  Set domain kustom untuk panel itu sendiri (bukan aplikasi) lewat API panel yang sudah jalan
+
+EXAMPLES
+  $ aoox domain set --web panel.example.com --api api.example.com
+
+  $ aoox domain set --web panel.example.com --api api.example.com --acme-email you@example.com
+```
+
+_See code: [src/commands/domain/set.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.0/src/commands/domain/set.ts)_
 
 ## `aoox help [COMMAND]`
 
@@ -150,7 +177,7 @@ EXAMPLES
   sudo aoox install --web-domain panel.example.com --api-domain api.panel.example.com --acme-email me@example.com
 ```
 
-_See code: [src/commands/install.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.0.0/src/commands/install.ts)_
+_See code: [src/commands/install.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.0/src/commands/install.ts)_
 
 ## `aoox link`
 
@@ -175,7 +202,7 @@ EXAMPLES
   $ aoox link --project <id> --app <id>
 ```
 
-_See code: [src/commands/link.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.0.0/src/commands/link.ts)_
+_See code: [src/commands/link.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.0/src/commands/link.ts)_
 
 ## `aoox login`
 
@@ -198,7 +225,7 @@ EXAMPLES
   $ aoox login --url https://panel.example.com --token aoox_xxx
 ```
 
-_See code: [src/commands/login.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.0.0/src/commands/login.ts)_
+_See code: [src/commands/login.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.0/src/commands/login.ts)_
 
 ## `aoox plugins`
 
@@ -514,7 +541,7 @@ EXAMPLES
   $ aoox whoami --json
 ```
 
-_See code: [src/commands/whoami.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.0.0/src/commands/whoami.ts)_
+_See code: [src/commands/whoami.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.0/src/commands/whoami.ts)_
 <!-- commandsstop -->
 
 ## Versioning

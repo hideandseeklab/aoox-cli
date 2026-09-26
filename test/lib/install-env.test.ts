@@ -5,6 +5,7 @@ import {buildEnvFile} from '../../src/lib/install-env.js'
 const base = {
   dockerGid: '999',
   encryptionKey: 'enc',
+  installDir: '/opt/aoox',
   jwtSecret: 'jwt',
   postgresPassword: 'pg',
   publicApiUrl: 'http://1.2.3.4:3001',
@@ -20,6 +21,7 @@ describe('buildEnvFile', () => {
     expect(env).to.include('WEB_ORIGIN=http://1.2.3.4:3000')
     expect(env).to.include('PUBLIC_API_URL=http://1.2.3.4:3001')
     expect(env).to.include('DOCKER_GID=999')
+    expect(env).to.include('INSTALL_DIR=/opt/aoox')
   })
 
   it('leaves optional fields blank rather than "undefined" when omitted', () => {

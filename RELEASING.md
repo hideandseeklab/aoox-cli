@@ -9,12 +9,16 @@ CI publishes via npm **Trusted Publishing** (OIDC) — no token stored anywhere.
 only register a trusted publisher for a package that already exists on npm, so the first-ever
 publish has to be done by hand:
 
-1. From your own machine (with your normal npm 2FA):
+1. From your own machine. npm now requires 2FA to be **enabled** on the account before it will
+   allow publishing at all (Account Settings → Two-Factor Authentication on npmjs.com) — if it's
+   off, publish fails with a 403, not a prompt to turn it on. Once 2FA is on, pass a fresh code:
    ```bash
-   npm publish --tag alpha
+   npm publish --tag alpha --otp=123456
    ```
-2. Once the `aoox` package exists, go to npmjs.com → the `aoox` package → **Settings → Trusted
-   publishing** → add a GitHub Actions publisher:
+   The package is scoped (`@hideandseeklab/aoox`) and `publishConfig.access` in `package.json` is
+   already set to `public`, so no `--access=public` flag is needed.
+2. Once the `@hideandseeklab/aoox` package exists, go to npmjs.com → the package → **Settings →
+   Trusted publishing** → add a GitHub Actions publisher:
    - Organization or user: `hideandseeklab`
    - Repository: `aoox-cli`
    - Workflow filename: `npm-publish.yml`
@@ -44,8 +48,8 @@ publish has to be done by hand:
    Watch it run under the repo's **Actions** tab.
 5. Once the workflow finishes, sanity-check the published package:
    ```bash
-   npm view aoox@alpha version
-   npx aoox@alpha --version
+   npm view @hideandseeklab/aoox@alpha version
+   npx -p @hideandseeklab/aoox@alpha aoox --version
    ```
 6. (Optional) Create a GitHub Release from the pushed tag and paste in the CHANGELOG.md entry for
    this version.

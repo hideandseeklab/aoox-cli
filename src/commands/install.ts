@@ -2,6 +2,7 @@ import {confirm} from '@inquirer/prompts'
 import {Command, Flags} from '@oclif/core'
 import {randomBytes} from 'node:crypto'
 import {copyFile, mkdir, stat, writeFile} from 'node:fs/promises'
+import {resolve} from 'node:path'
 import {fileURLToPath} from 'node:url'
 
 import {dockerInherit} from '../lib/docker.js'
@@ -64,6 +65,7 @@ export default class Install extends Command {
       apiDomain: flags['api-domain'],
       dockerGid: dockerSocketGid(),
       encryptionKey: randomBytes(32).toString('hex'),
+      installDir: resolve(dir),
       jwtSecret: randomBytes(32).toString('hex'),
       postgresPassword: randomBytes(24).toString('hex'),
       publicApiUrl,
