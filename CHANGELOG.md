@@ -8,6 +8,26 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+## [0.1.0-alpha.2] - 2026-09-27
+
+### Added
+
+- `aoox domain set` now prints a warning with manual troubleshooting steps (DNS, firewall, waiting
+  for the ACME certificate) when the API auto-provisioned the reverse proxy because it wasn't
+  running yet.
+- `aoox install` now defaults `TERMINAL_SSH_USER` to `root` in the generated `.env.dist` (override
+  with `--terminal-ssh-user`), instead of leaving it blank — the install itself already requires
+  root, so the web terminal is ready to use against the host right after install (still needs the
+  one-time authorize command from Settings → Terminal, since the API can't write `authorized_keys`
+  itself).
+
+### Fixed
+
+- Bundled `assets/install/docker-compose.dist.yml` updated to match the copy in `aoox-api`:
+  `PUBLIC_API_URL` is now also declared for the `api` service (it was already there for `web`), fixing
+  webhook URLs and the panel-domain status card always showing `localhost` on a fresh install even
+  after a custom API domain was set.
+
 ## [0.1.0-alpha.1] - 2026-09-26
 
 ### Added
@@ -40,6 +60,7 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 - `aoox install` — bootstrap aoox (postgres + api + web) on a fresh VPS via Docker Compose.
 - `aoox whoami` — show the account and panel currently in use.
 
-[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.1...HEAD
+[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.2...HEAD
+[0.1.0-alpha.2]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.1...v0.1.0-alpha.2
 [0.1.0-alpha.1]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.0...v0.1.0-alpha.1
 [0.1.0-alpha.0]: https://github.com/hideandseeklab/aoox-cli/releases/tag/v0.1.0-alpha.0

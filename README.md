@@ -157,18 +157,20 @@ Pasang aoox (postgres + api + web) di VPS baru lewat Docker Compose
 ```
 USAGE
   $ aoox install [--acme-email <value>] [--admin-name <value> --admin-email <value>] [--admin-password
-    <value> ] [--api-domain <value> --web-domain <value>] [--dir <value>] [--force] [-y]
+    <value> ] [--api-domain <value> --web-domain <value>] [--dir <value>] [--force] [--terminal-ssh-user <value>] [-y]
 
 FLAGS
-  -y, --yes                     Jangan tanya konfirmasi apa pun
-      --acme-email=<value>      Wajib bersama --web-domain/--api-domain (Let’s Encrypt)
-      --admin-email=<value>     Buat owner pertama tanpa lewat /setup di browser
-      --admin-name=<value>      Nama owner pertama
-      --admin-password=<value>  Password owner pertama (min. 8 karakter)
-      --api-domain=<value>      Domain untuk API, lewat proxy bawaan
-      --dir=<value>             [default: /opt/aoox] Folder instalasi
-      --force                   Timpa instalasi yang sudah ada di --dir
-      --web-domain=<value>      Domain untuk panel web, lewat proxy bawaan
+  -y, --yes                        Jangan tanya konfirmasi apa pun
+      --acme-email=<value>         Wajib bersama --web-domain/--api-domain (Let’s Encrypt)
+      --admin-email=<value>        Buat owner pertama tanpa lewat /setup di browser
+      --admin-name=<value>         Nama owner pertama
+      --admin-password=<value>     Password owner pertama (min. 8 karakter)
+      --api-domain=<value>         Domain untuk API, lewat proxy bawaan
+      --dir=<value>                [default: /opt/aoox] Folder instalasi
+      --force                      Timpa instalasi yang sudah ada di --dir
+      --terminal-ssh-user=<value>  [default: root] User SSH untuk fitur Terminal web masuk ke host ini (instalasi
+                                   berjalan sebagai root)
+      --web-domain=<value>         Domain untuk panel web, lewat proxy bawaan
 
 DESCRIPTION
   Pasang aoox (postgres + api + web) di VPS baru lewat Docker Compose

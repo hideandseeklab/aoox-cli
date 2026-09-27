@@ -28,6 +28,10 @@ export default class Install extends Command {
     'api-domain': Flags.string({dependsOn: ['web-domain'], description: 'Domain untuk API, lewat proxy bawaan'}),
     dir: Flags.string({default: '/opt/aoox', description: 'Folder instalasi'}),
     force: Flags.boolean({default: false, description: 'Timpa instalasi yang sudah ada di --dir'}),
+    'terminal-ssh-user': Flags.string({
+      default: 'root',
+      description: 'User SSH untuk fitur Terminal web masuk ke host ini (instalasi berjalan sebagai root)',
+    }),
     'web-domain': Flags.string({dependsOn: ['api-domain'], description: 'Domain untuk panel web, lewat proxy bawaan'}),
     yes: Flags.boolean({char: 'y', default: false, description: 'Jangan tanya konfirmasi apa pun'}),
   }
@@ -70,6 +74,7 @@ export default class Install extends Command {
       postgresPassword: randomBytes(24).toString('hex'),
       publicApiUrl,
       publicIp,
+      terminalSshUser: flags['terminal-ssh-user'],
       webDomain: flags['web-domain'],
       webOrigin,
     })

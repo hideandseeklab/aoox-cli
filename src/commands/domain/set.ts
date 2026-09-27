@@ -11,6 +11,11 @@ interface PanelDomainSettings {
   webHost: null | string
 }
 
+interface UpdatePanelDomainResult {
+  proxyAutoProvisioned: boolean
+  settings: PanelDomainSettings
+}
+
 /**
  * Post-install alternative to hand-editing docker-compose.domain.yml/.env.dist
  * over SSH (see RELEASING.md-adjacent AGENTS.md "Domain untuk panel sendiri"):
@@ -44,8 +49,9 @@ static flags = {
       throw error
     }
 
+    let result: UpdatePanelDomainResult
     try {
-      await api<PanelDomainSettings>(config, '/instance/domain', {
+      result = await api<UpdatePanelDomainResult>(config, '/instance/domain', {
         body: {
           ...(flags['acme-email'] ? {acmeEmail: flags['acme-email']} : {}),
           apiHost: flags.api,
@@ -65,5 +71,14 @@ static flags = {
 
     this.log(`Domain disimpan: ${flags.web} (dashboard), ${flags.api} (API).`)
     this.log('Panel akan restart beberapa detik untuk menerapkannya — koneksi ke API ini akan sempat terputus.')
+
+    if (result.proxyAutoProvisioned) {
+      this.log('')
+      this.warn('Reverse proxy belum jalan sebelumnya — sudah diaktifkan otomatis.')
+      this.log('Domain baru bisa diakses kalau tiga hal ini juga sudah benar:')
+      this.log(`  1. DNS A record ${flags.web} dan ${flags.api} sudah mengarah ke IP server ini.`)
+      this.log('  2. Port 80 dan 443 terbuka untuk publik (firewall OS maupun security group provider VPS).')
+      this.log("  3. Tunggu sampai semenit — sertifikat HTTPS (Let's Encrypt) baru diterbitkan saat domain pertama diakses.")
+    }
   }
 }

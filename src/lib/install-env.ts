@@ -13,6 +13,8 @@ export interface InstallEnvOptions {
   postgresPassword: string
   publicApiUrl: string
   publicIp?: string
+  /** SSH user for the web terminal's host shell. Defaults to `root` — the installer itself requires it. */
+  terminalSshUser?: string
   webDomain?: string
   webOrigin: string
 }
@@ -55,7 +57,7 @@ export function buildEnvFile(o: InstallEnvOptions): string {
     '',
     `TERMINAL_SSH_HOST=host.docker.internal`,
     `TERMINAL_SSH_PORT=22`,
-    `TERMINAL_SSH_USER=`,
+    `TERMINAL_SSH_USER=${o.terminalSshUser ?? 'root'}`,
     `TERMINAL_SSH_PRIVATE_KEY_FILE=`,
     `TERMINAL_SSH_PASSPHRASE=`,
     `TERMINAL_SSH_PASSWORD=`,

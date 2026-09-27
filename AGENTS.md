@@ -145,6 +145,12 @@ sederhana & standar seperti installer PaaS self-hosted lain, tanpa CLI perlu log
   `https://api.ipify.org` — jasa yang sama yang dipercaya `check-domain-dns` di API) kecuali mode
   domain (`--web-domain`+`--api-domain`, **wajib** `--acme-email` — tanpa itu resolver `le` yang
   dirujuk label `docker-compose.domain.yml` tidak pernah ada, https gagal diam-diam).
+  `TERMINAL_SSH_HOST` selalu `host.docker.internal` (compose sudah menyediakan alias ini lewat
+  `extra_hosts`), dan `TERMINAL_SSH_USER` default **`root`** (`--terminal-ssh-user` untuk override)
+  karena instalasi sendiri mewajibkan root (`isRoot()`) — jadi fitur Terminal langsung siap dipakai
+  ke host aoox sendiri setelah instalasi, tanpa perlu buka menu Environment dulu. Kredensialnya
+  sendiri (public key platform) tetap butuh **satu langkah manual**: perintah otorisasi yang
+  ditampilkan di Settings → Terminal, karena API tidak bisa menulis `authorized_keys` host.
 - `system.ts` (sebagian besar impure — exec/spawn, tidak di-unit-test kecuali `isIpv4` yang pure):
   `isRoot()` (`process.getuid()`, wajib — tulis ke `/opt` + kelola Docker), `commandExists`/
   `dockerRunning` (`docker info`), `dockerSocketGid()` (`stat -c %g /var/run/docker.sock` — dipakai

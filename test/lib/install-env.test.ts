@@ -24,6 +24,16 @@ describe('buildEnvFile', () => {
     expect(env).to.include('INSTALL_DIR=/opt/aoox')
   })
 
+  it('defaults TERMINAL_SSH_USER to root — the install itself requires it', () => {
+    const env = buildEnvFile(base)
+    expect(env).to.include('TERMINAL_SSH_USER=root')
+  })
+
+  it('honors a custom terminalSshUser', () => {
+    const env = buildEnvFile({...base, terminalSshUser: 'deploy'})
+    expect(env).to.include('TERMINAL_SSH_USER=deploy')
+  })
+
   it('leaves optional fields blank rather than "undefined" when omitted', () => {
     const env = buildEnvFile(base)
     expect(env).to.include('PUBLIC_IP=\n')
