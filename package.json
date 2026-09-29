@@ -1,7 +1,7 @@
 {
   "name": "@hideandseeklab/aoox",
   "description": "aoox CLI — build and deploy",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.4",
   "author": "hideandseeklab <hideandseek.developer@gmail.com>",
   "publishConfig": {
     "access": "public"
