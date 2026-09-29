@@ -21,7 +21,7 @@ $ npm install -g @hideandseeklab/aoox
 $ aoox COMMAND
 running command...
 $ aoox (--version)
-@hideandseeklab/aoox/0.1.0-alpha.3 linux-x64 node-v22.23.3
+@hideandseeklab/aoox/0.1.0-alpha.3 win32-x64 node-v24.12.0
 $ aoox --help [COMMAND]
 USAGE
   $ aoox COMMAND
@@ -96,6 +96,7 @@ npm link            # or: npm install -g .
 * [`aoox plugins unlink [PLUGIN]`](#aoox-plugins-unlink-plugin)
 * [`aoox plugins update`](#aoox-plugins-update)
 * [`aoox registry domain`](#aoox-registry-domain)
+* [`aoox reinstall`](#aoox-reinstall)
 * [`aoox update`](#aoox-update)
 * [`aoox whoami`](#aoox-whoami)
 
@@ -568,6 +569,36 @@ EXAMPLES
 ```
 
 _See code: [src/commands/registry/domain.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.3/src/commands/registry/domain.ts)_
+
+## `aoox reinstall`
+
+Perbaiki/segarkan instalasi aoox yang sudah ada tanpa kehilangan data: tulis ulang compose, gabungkan .env.dist (secret tidak pernah dibuat ulang), lalu pull + recreate
+
+```
+USAGE
+  $ aoox reinstall [--dir <value>] [--dry-run] [--no-pull] [--terminal-ssh-user <value>] [-y]
+
+FLAGS
+  -y, --yes                        Jangan tanya konfirmasi
+      --dir=<value>                [default: /opt/aoox] Folder instalasi
+      --dry-run                    Cetak rencana (file yang berubah, key yang ditambah, perintah compose) tanpa mengubah
+                                   apa pun
+      --no-pull                    Lewati docker compose pull (pakai image yang sudah ada)
+      --terminal-ssh-user=<value>  Isi/timpa TERMINAL_SSH_USER di .env.dist saat repair
+
+DESCRIPTION
+  Perbaiki/segarkan instalasi aoox yang sudah ada tanpa kehilangan data: tulis ulang compose, gabungkan .env.dist
+  (secret tidak pernah dibuat ulang), lalu pull + recreate
+
+EXAMPLES
+  sudo aoox reinstall --dry-run
+
+  sudo aoox reinstall
+
+  sudo aoox reinstall --yes --terminal-ssh-user root
+```
+
+_See code: [src/commands/reinstall.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.3/src/commands/reinstall.ts)_
 
 ## `aoox update`
 

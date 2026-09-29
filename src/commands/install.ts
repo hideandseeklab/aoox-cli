@@ -1,7 +1,7 @@
 import {confirm} from '@inquirer/prompts'
 import {Command, Flags} from '@oclif/core'
 import {randomBytes} from 'node:crypto'
-import {copyFile, mkdir, stat, writeFile} from 'node:fs/promises'
+import {copyFile, mkdir, readFile, stat, writeFile} from 'node:fs/promises'
 import {resolve} from 'node:path'
 import {fileURLToPath} from 'node:url'
 
@@ -130,13 +130,36 @@ export default class Install extends Command {
     }
 
     if (exists && !flags.force) {
-      this.error(`Sudah ada instalasi di ${dir}.`, {suggestions: ['Beri --force untuk menimpanya.']})
+      this.error(`Sudah ada instalasi di ${dir}.`, {suggestions: [
+          'Untuk memperbaiki/menyegarkan instalasi yang ada tanpa kehilangan data: `sudo aoox reinstall`.',
+          'Beri --force hanya untuk instalasi ulang dari nol — itu membuat secret baru dan memutus akses ke data lama.',
+        ],
+      })
+    }
+
+    let hasSecrets = false
+    if (exists) {
+      try {
+        hasSecrets = /^\s*(POSTGRES_PASSWORD|JWT_SECRET|ENCRYPTION_KEY)=\S/m.test(await readFile(`${dir}/.env.dist`, 'utf8'))
+      } catch {
+        /* no .env.dist — nothing to overwrite */
+      }
+    }
+
+    if (hasSecrets) {
+      this.warn(
+        `--force MENIMPA ${dir}/.env.dist dengan secret acak baru (POSTGRES_PASSWORD, JWT_SECRET, ENCRYPTION_KEY): ` +
+          'database lama tidak bisa diakses lagi dan semua kredensial tersimpan (registry, git, S3, notifikasi, 2FA) tidak bisa didekripsi. ' +
+          'Untuk memperbaiki instalasi yang ada tanpa kehilangan data, batalkan dan jalankan `sudo aoox reinstall`.',
+      )
     }
 
     if (flags.yes) return
     const ok = await confirm({
-      default: true,
-      message: `Pasang aoox di ${dir}${exists ? ' (menimpa yang ada)' : ''} dan jalankan docker compose up -d?`,
+      default: !hasSecrets,
+      message: hasSecrets
+        ? `Tetap timpa .env.dist dan buat secret baru di ${dir} (data lama tidak akan terbaca)?`
+        : `Pasang aoox di ${dir}${exists ? ' (menimpa yang ada)' : ''} dan jalankan docker compose up -d?`,
     })
     if (!ok) this.exit(0)
   }

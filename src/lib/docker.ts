@@ -53,3 +53,16 @@ export function dockerLogin(registryUrl: string, username: string, password: str
     child.stdin.end()
   })
 }
+
+/** `docker <args>` capturing stdout; empty string on any failure (missing docker, non-zero exit). */
+export function dockerCapture(args: string[], cwd?: string): Promise<string> {
+  return new Promise((resolve) => {
+    const child = spawn('docker', args, {cwd, stdio: ['ignore', 'pipe', 'ignore']})
+    let out = ''
+    child.stdout.on('data', (chunk) => {
+      out += String(chunk)
+    })
+    child.on('error', () => resolve(''))
+    child.on('close', (code) => resolve(code === 0 ? out.trim() : ''))
+  })
+}

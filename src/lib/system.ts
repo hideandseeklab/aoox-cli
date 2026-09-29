@@ -26,7 +26,7 @@ export function dockerRunning(): boolean {
 /** gid that owns the host's docker socket — the api container needs it (see .env.dist.example). */
 export function dockerSocketGid(): string {
   try {
-    return execFileSync('stat', ['-c', '%g', '/var/run/docker.sock']).toString().trim() || '0'
+    return execFileSync('stat', ['-c', '%g', '/var/run/docker.sock'], {stdio: ['ignore', 'pipe', 'ignore']}).toString().trim() || '0'
   } catch {
     return '0'
   }
@@ -62,5 +62,25 @@ export async function detectPublicIp(): Promise<string | undefined> {
     return isIpv4(text) ? text : undefined
   } catch {
     return undefined
+  }
+}
+
+/** Polls the API's own setup-status endpoint — migrations run on boot, so "container up" isn't "ready". */
+export async function waitForApi(port: string, timeoutMs: number, pollMs = 2000): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs
+  for (;;) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      const res = await fetch(`http://localhost:${port}/auth/setup-status`, {signal: AbortSignal.timeout(3000)})
+      if (res.ok) return true
+    } catch {
+      /* API not answering yet */
+    }
+
+    if (Date.now() >= deadline) return false
+    // eslint-disable-next-line no-await-in-loop
+    await new Promise((resolve) => {
+      setTimeout(resolve, pollMs)
+    })
   }
 }

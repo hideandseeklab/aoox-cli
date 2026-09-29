@@ -8,7 +8,33 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+## [0.1.0-alpha.4] - 2026-09-29
+
 ### Added
+
+- **`aoox reinstall`** — repairs/refreshes an existing panel install without losing data. `aoox update`
+  (and the dashboard's "Apply update") only `pull` + `up -d`: they never rewrite `docker-compose.dist.yml`
+  or add new keys to `.env.dist`, so older installs miss fixes that need a compose/env change (e.g.
+  Terminal's `TERMINAL_SSH_USER is not set`, `PUBLIC_API_URL` not reaching the api service). It backs up the
+  files it will change to `<dir>/backups/<timestamp>/` (`.env.dist` stays mode 600), rewrites
+  `docker-compose.dist.yml` (and `docker-compose.domain.yml` if present) from the bundled copy, **merges**
+  `.env.dist` (existing values, order, comments and unknown keys are kept byte for byte; only missing keys
+  that have a safe default — taken from `buildEnvFile` and only when they differ from the compose file's own
+  `${VAR:-default}` — are appended; the three secrets are never regenerated, and it refuses to run if
+  `POSTGRES_PASSWORD`/`JWT_SECRET`/`ENCRYPTION_KEY` is missing), then `docker compose pull` +
+  `up -d --force-recreate` with the same `-f` list the running api container was started with (its
+  `com.docker.compose.project.config_files` label, trusted only when its working_dir is this folder;
+  fallback: dist, domain, and `docker-compose.override.yml` if present — Compose only auto-includes the
+  override for a file named `docker-compose.yml`). `docker-compose.override.yml` is never touched. Flags:
+  `--dir`, `--dry-run` (plan + line diff, changes nothing), `--yes`, `--no-pull`,
+  `--terminal-ssh-user`. Idempotent: with nothing to change it writes no file and makes no backup.
+  Verified end to end inside a `docker:dind` container: a real `0.1.0-alpha.2` stack (alpha.2 compose + images, no
+  `TERMINAL_SSH_USER`, plus a panel-made override) upgraded to the current images — dry-run, apply, second run;
+  login, Postgres data and the override survived, `TERMINAL_SSH_USER=root` reached the api container; also a stale
+  compose (missing a line) and a missing-`JWT_SECRET` refusal. Unit tests cover merge, compose-file selection and diff.
+- `aoox install --force` now warns loudly (and defaults the prompt to "no") when the target already has an
+  `.env.dist` with secrets — it would replace them and orphan the old database and every stored credential —
+  and the "already installed" error points to `aoox reinstall`.
 
 - Standalone install script support: `oclif pack tarballs` is now configured (`package.json`'s
   `oclif.update.node`, pinned Node 22.11.0) for `linux-x64`/`linux-arm64`/`darwin-x64`/
@@ -88,7 +114,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 - `aoox install` — bootstrap aoox (postgres + api + web) on a fresh VPS via Docker Compose.
 - `aoox whoami` — show the account and panel currently in use.
 
-[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.3...HEAD
+[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.4...HEAD
+[0.1.0-alpha.4]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.3...v0.1.0-alpha.4
 [0.1.0-alpha.3]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.2...v0.1.0-alpha.3
 [0.1.0-alpha.2]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.1...v0.1.0-alpha.2
 [0.1.0-alpha.1]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.0...v0.1.0-alpha.1
