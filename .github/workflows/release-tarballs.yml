@@ -1,0 +1,103 @@
+name: Release tarballs
+
+# Runs on the same version tag as npm-publish.yml, but as a separate job/file
+# so a problem here never affects the npm publish (see RELEASING.md — npm
+# publish has its own 2FA/trusted-publishing constraints and must keep
+# working on its own). Builds standalone tarballs via `oclif pack tarballs`
+# (bundled Node.js runtime, no system Node.js required — see
+# aoox-cli/package.json's `oclif.update.node` block for the pinned Node
+# version and target list) and uploads them to a GitHub Release for the tag,
+# for aoox-landing/public/install-cli.sh to fetch.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write # to create the release and upload assets
+
+jobs:
+  release-tarballs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+      # Targets/Node version come from package.json's oclif.update.node —
+      # no --targets flag needed here. --xz also builds the smaller .tar.xz
+      # alongside the default .tar.gz (install-cli.sh prefers .tar.xz and
+      # falls back to .tar.gz only when the target has no xz binary).
+      - name: Pack tarballs
+        run: npx oclif pack tarballs --parallel --xz
+
+      # oclif names each asset `<bin>-v<version>-<sha>-<platform>-<arch>.<ext>`
+      # (e.g. aoox-v0.1.0-alpha.3-b7face7-linux-x64.tar.gz) — great for
+      # traceability, useless as a stable download URL, since install-cli.sh
+      # can't know the commit sha in advance. Every asset above is uploaded
+      # as-is for that traceability, *and* copied here under a fixed name
+      # (`aoox-<platform>-<arch>.<ext>`) that install-cli.sh downloads
+      # directly once it knows the release tag, with a paired `.sha256`
+      # checksum file for each of the fixed-name and original-name copies.
+      - name: Stage stable-named copies + checksums
+        run: |
+          set -euo pipefail
+          cd dist
+          shopt -s nullglob
+          for f in aoox-v*-*-*-*.tar.gz aoox-v*-*-*-*.tar.xz; do
+            # Strip the "aoox-v<version>-<sha>-" prefix down to "<platform>-<arch>.<ext>".
+            rest="$(echo "$f" | sed -E 's/^aoox-v[^-]+(-[0-9A-Za-z.]+)*-[0-9a-f]{7}-//')"
+            cp "$f" "aoox-$rest"
+          done
+          for f in *.tar.gz *.tar.xz; do
+            sha256sum "$f" > "$f.sha256"
+          done
+          ls -la
+
+      - name: Determine prerelease flag
+        id: prerelease
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [[ "$VERSION" == *-* ]]; then
+            echo "flag=--prerelease" >> "$GITHUB_OUTPUT"
+          else
+            echo "flag=" >> "$GITHUB_OUTPUT"
+          fi
+
+      # `gh release create` fails if a release for this tag already exists
+      # (e.g. a re-run, or one created by hand) — fall through to `upload
+      # --clobber` in that case instead of failing the job.
+      - name: Create or reuse the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          if ! gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --repo "${{ github.repository }}" \
+              --title "$TAG" \
+              --generate-notes \
+              ${{ steps.prerelease.outputs.flag }}
+          fi
+
+      - name: Upload assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          gh release upload "$TAG" dist/*.tar.gz dist/*.tar.xz dist/*.sha256 \
+            --repo "${{ github.repository }}" \
+            --clobber

@@ -21,7 +21,7 @@ $ npm install -g @hideandseeklab/aoox
 $ aoox COMMAND
 running command...
 $ aoox (--version)
-@hideandseeklab/aoox/0.1.0-alpha.3 win32-x64 node-v24.12.0
+@hideandseeklab/aoox/0.1.0-alpha.3 linux-x64 node-v22.23.3
 $ aoox --help [COMMAND]
 USAGE
   $ aoox COMMAND
@@ -30,6 +30,26 @@ USAGE
 <!-- usagestop -->
 
 # Installation
+
+## Linux / macOS (no Node.js required)
+
+A standalone install script downloads a tarball with its own bundled Node.js runtime — nothing
+to install first, works even on a machine that will never otherwise touch Node.js (e.g. a bare
+VPS before running `aoox install` on it):
+
+```sh-session
+curl -fsSL https://aoox.dev/install-cli.sh | sh
+```
+
+This installs to `/usr/local/lib/aoox` + `/usr/local/bin/aoox` when run as root or with
+passwordless `sudo` available, or `~/.local/lib/aoox` + `~/.local/bin/aoox` otherwise (a `curl |
+sh` pipe can't relay an interactive `sudo` password prompt safely, so the script never tries).
+Re-running it upgrades in place. Supports Linux (glibc — not Alpine/musl) and macOS on x64/arm64;
+anything else needs the npm install below instead. See the comment header of
+[`install-cli.sh`](https://github.com/hideandseeklab/aoox-landing/blob/main/public/install-cli.sh)
+for every environment variable it accepts (pinning a version, a custom install directory, etc).
+
+## npm (Windows, Alpine, or if you already have Node.js)
 
 `aoox` is still in **alpha** — published to npm under the `alpha` dist-tag, not `latest`
 (the package has never had a stable release, so `npm install -g @hideandseeklab/aoox` without a
@@ -41,7 +61,10 @@ npm install -g @hideandseeklab/aoox@alpha
 
 `aoox` is then available globally. This also applies to `aoox install` on a new VPS —
 Node ≥22 must already be installed on that VPS **before** the step above (`aoox install`
-itself needs Node to run, so it cannot install Node for you first).
+itself needs Node to run, so it cannot install Node for you first) — or use the install script
+above, which needs no Node.js on the VPS at all.
+
+## From source
 
 To install from source (e.g. to contribute, or to get the latest `main` before it is
 released to npm):

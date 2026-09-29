@@ -57,7 +57,18 @@
       "@oclif/plugin-help",
       "@oclif/plugin-plugins"
     ],
-    "topicSeparator": " "
+    "topicSeparator": " ",
+    "update": {
+      "node": {
+        "version": "22.11.0",
+        "targets": [
+          "linux-x64",
+          "linux-arm64",
+          "darwin-x64",
+          "darwin-arm64"
+        ]
+      }
+    }
   },
   "repository": {
     "type": "git",

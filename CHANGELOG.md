@@ -8,6 +8,27 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+### Added
+
+- Standalone install script support: `oclif pack tarballs` is now configured (`package.json`'s
+  `oclif.update.node`, pinned Node 22.11.0) for `linux-x64`/`linux-arm64`/`darwin-x64`/
+  `darwin-arm64`, bundling a Node.js runtime with the CLI so it can be installed on a machine with
+  no Node.js at all — see `aoox-landing/public/install-cli.sh`. New
+  `.github/workflows/release-tarballs.yml` builds these tarballs on every version tag (alongside,
+  not instead of, the existing npm publish) and uploads them to a GitHub Release: the original
+  `<bin>-v<version>-<sha>-<platform>-<arch>.tar.gz`/`.tar.xz` oclif produces, a stable-named copy
+  of each (`aoox-<platform>-<arch>.tar.gz`/`.tar.xz` — oclif's own naming embeds the commit sha, so
+  it can't be a stable download URL) that the install script actually fetches, and a `.sha256`
+  checksum file for every one of them. Tags with a pre-release version are marked as a GitHub
+  prerelease. `@oclif/plugin-plugins` was kept (undecided whether to drop it) despite pulling in a
+  full copy of the `npm` CLI as a dependency for its "install a plugin" feature — verified this
+  contributes ~17 MB of the ~32 MB of installed `node_modules` in a built tarball (the bundled
+  Node.js runtime itself is the other ~112 MB, for ~145 MB installed / ~30–47 MB downloaded
+  depending on `.tar.xz` vs `.tar.gz`).
+- README's Installation section now leads with the install script for Linux/macOS, keeping npm as
+  the path for Windows, Alpine (musl — the bundled Node.js binary needs glibc), or anyone who
+  already has Node.js. `RELEASING.md` documents the new release workflow and asset layout.
+
 ## [0.1.0-alpha.3] - 2026-09-28
 
 ### Changed

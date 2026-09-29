@@ -39,20 +39,46 @@ publish has to be done by hand:
    This updates `package.json`, regenerates `README.md`'s command reference (the `version` script
    runs `oclif readme && git add README.md`), commits everything, creates the git tag
    `v0.1.0-alpha.1`, and (via `postversion`) pushes the commit and the tag.
-4. This triggers [`.github/workflows/npm-publish.yml`](.github/workflows/npm-publish.yml), which
-   builds, runs `npm test`, and publishes to npm via Trusted Publishing (see the one-time setup
-   above — no token needed once that's configured). The dist-tag is derived from the version's
-   pre-release label — `0.1.0-alpha.1` publishes under `alpha`, `0.2.0-beta.0` under `beta`, and a
-   version with no pre-release label (e.g. `1.0.0`) publishes under `latest`.
+4. This triggers two independent workflows on the pushed tag — a failure in one never blocks
+   the other:
+   - [`.github/workflows/npm-publish.yml`](.github/workflows/npm-publish.yml): builds, runs
+     `npm test`, and publishes to npm via Trusted Publishing (see the one-time setup above — no
+     token needed once that's configured). The dist-tag is derived from the version's pre-release
+     label — `0.1.0-alpha.1` publishes under `alpha`, `0.2.0-beta.0` under `beta`, and a version
+     with no pre-release label (e.g. `1.0.0`) publishes under `latest`.
+   - [`.github/workflows/release-tarballs.yml`](.github/workflows/release-tarballs.yml): packs
+     standalone tarballs (`oclif pack tarballs`, bundled Node.js — see the "Standalone tarball
+     install" section below) for `linux-x64`/`linux-arm64`/`darwin-x64`/`darwin-arm64`, and
+     creates (or reuses) a GitHub Release for the tag with those tarballs, their `.sha256`
+     checksums, and stable-named copies (`aoox-<platform>-<arch>.tar.gz`/`.tar.xz`) attached —
+     that's what `aoox-landing/public/install-cli.sh` downloads. A version with a pre-release
+     label is marked as a GitHub prerelease automatically.
 
-   Watch it run under the repo's **Actions** tab.
-5. Once the workflow finishes, sanity-check the published package:
+   Watch both run under the repo's **Actions** tab.
+5. Once the workflows finish, sanity-check both outputs:
    ```bash
    npm view @hideandseeklab/aoox@alpha version
    npx -p @hideandseeklab/aoox@alpha aoox --version
    ```
-6. (Optional) Create a GitHub Release from the pushed tag and paste in the CHANGELOG.md entry for
-   this version.
+   and open the new release under **Releases** — it should already have 32 assets (4 platforms ×
+   2 formats `.tar.gz`/`.tar.xz` × 2 names each: oclif's original versioned+sha filename and the
+   stable `aoox-<platform>-<arch>` one, each paired with its own `.sha256` file) and,
+   for a pre-release version, the "Pre-release" badge. The release's auto-generated notes are a
+   plain commit list — replace the body with the CHANGELOG.md entry for this version if you want
+   something more readable there (`gh release edit <tag> --notes-file -` or via the GitHub UI).
+
+## Standalone tarball install (`install-cli.sh`)
+
+Separate from the npm package: `oclif pack tarballs` (configured in `package.json`'s
+`oclif.update.node`, pinned Node version + target list) bundles a Node.js runtime with the CLI, so
+`aoox-landing/public/install-cli.sh` can install `aoox` on a fresh Linux/macOS machine with no
+Node.js at all — `curl -fsSL https://aoox.dev/install-cli.sh | sh`. Nothing about this needs a
+manual step during a normal release: `release-tarballs.yml` (see above) builds and uploads it for
+every tag automatically, using whatever is checked in at that tag (so a `postversion`/README
+change from `npm version` is already included). If `install-cli.sh` itself needs a change (new env
+var, new platform), edit it directly in `aoox-landing/public/` — it doesn't need a matching version
+bump in `aoox-cli`, since it always resolves "latest" via the GitHub Releases API (or an explicit
+`AOOX_VERSION`) rather than pinning a version in its own source.
 
 ## If the bundled compose files changed
 
