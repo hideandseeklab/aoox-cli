@@ -8,6 +8,21 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+## [0.1.0-alpha.5] - 2026-10-02
+
+### Changed
+
+- Project metadata for discoverability (no behavior change): `package.json` `homepage` now points to https://aoox.dev (was the GitHub repo) — it becomes the Homepage
+  link on the npm page — and `description`/`keywords` are richer (self-hosted, paas, docker, deploy, git-deploy, cli,
+  nixpacks, railpack, traefik); `bugs` is now the object form. The top of the README links to the website, docs and
+  changelog and to the other repos (outside the `oclif readme` markers, so regenerating it keeps them).
+
+- Bundled `assets/install/docker-compose.dist.yml` re-synced with aoox-api: it now forwards `API_IMAGE`, `WEB_IMAGE`,
+  `WEBHOOK_VERIFY_GITHUB_IP` and `PREVIEW_DOMAIN` to the `api` container. `aoox install` needs no new `.env.dist`
+  lines for them (all optional, nothing meaningful to write), and `aoox reinstall` never adds them either — it only
+  rewrites the compose file, which is how an older install picks the variables up (tests cover both, plus that the
+  compose fallbacks for the image pins equal the `image:` defaults).
+
 ## [0.1.0-alpha.4] - 2026-09-29
 
 ### Added
@@ -114,7 +129,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 - `aoox install` — bootstrap aoox (postgres + api + web) on a fresh VPS via Docker Compose.
 - `aoox whoami` — show the account and panel currently in use.
 
-[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.4...HEAD
+[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.5...HEAD
+[0.1.0-alpha.5]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.4...v0.1.0-alpha.5
 [0.1.0-alpha.4]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.3...v0.1.0-alpha.4
 [0.1.0-alpha.3]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.2...v0.1.0-alpha.3
 [0.1.0-alpha.2]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.1...v0.1.0-alpha.2

@@ -52,6 +52,26 @@ describe('repairDefaults', () => {
       expect(d.has(k), k).to.equal(false)
     }
   })
+
+  it('never adds the optional pass-through vars (image pins, webhook IP check, preview domain) — reinstall must not invent them', () => {
+    const vars = composeVariables(compose)
+    // they ARE read by the bundled compose (so an install that sets them keeps working) ...
+    for (const k of ['API_IMAGE', 'WEB_IMAGE', 'WEBHOOK_VERIFY_GITHUB_IP', 'PREVIEW_DOMAIN']) expect(vars.has(k), k).to.equal(true)
+    // ... but a repair adds none of them: they have no meaningful default to write
+    const d = defaults()
+    for (const k of ['API_IMAGE', 'WEB_IMAGE', 'WEBHOOK_VERIFY_GITHUB_IP', 'PREVIEW_DOMAIN']) expect(d.has(k), k).to.equal(false)
+  })
+
+  it('the compose fallbacks for the image pins equal the image: defaults (they must never diverge)', () => {
+    const f = composeDefaults(compose)
+    expect(f.get('API_IMAGE')).to.equal('hideandseeklab/aoox-api:latest')
+    expect(f.get('WEB_IMAGE')).to.equal('hideandseeklab/aoox-web:latest')
+    const api = /^\s+API_IMAGE: (\$\{API_IMAGE:-[^}]*\})$/m.exec(compose)?.[1]
+    const img = /image: (\$\{API_IMAGE:-[^}]*\})/.exec(compose)?.[1]
+    expect(api).to.equal(img)
+    const web = /^\s+WEB_IMAGE: (\$\{WEB_IMAGE:-[^}]*\})$/m.exec(compose)?.[1]
+    expect(web).to.equal(/image: (\$\{WEB_IMAGE:-[^}]*\})/.exec(compose)?.[1])
+  })
 })
 
 describe('mergeEnv', () => {

@@ -12,9 +12,17 @@ import {buildEnvFile} from '../../src/lib/install-env.js'
  */
 describe('assets/install compose vs buildEnvFile coverage', () => {
   // Vars the compose files default or set outside .env.dist on purpose
-  // (see install-env.ts and .env.dist.example: pinned image overrides and
-  // JWT expiry are advanced, commented-out-by-default options).
-  const intentionallyOmitted = new Set(['API_IMAGE', 'JWT_EXPIRES_IN', 'WEB_IMAGE'])
+  // (see install-env.ts and .env.dist.example: pinned image overrides, JWT
+  // expiry and the optional webhook/preview switches are advanced options with
+  // no meaningful default, commented out in .env.dist.example — a fresh
+  // .env.dist must not carry empty placeholders for them).
+  const intentionallyOmitted = new Set([
+    'API_IMAGE',
+    'JWT_EXPIRES_IN',
+    'PREVIEW_DOMAIN',
+    'WEB_IMAGE',
+    'WEBHOOK_VERIFY_GITHUB_IP',
+  ])
 
   it('does not leave a compose variable unwritten', () => {
     const compose = readFileSync('assets/install/docker-compose.dist.yml', 'utf8')

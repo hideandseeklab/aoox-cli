@@ -1,7 +1,28 @@
 {
   "name": "@hideandseeklab/aoox",
-  "description": "aoox CLI — build and deploy",
   "version": "0.1.0-alpha.4",
+  "description": "aoox CLI — build, deploy and manage a self-hosted aoox PaaS from your terminal",
+  "keywords": [
+    "oclif",
+    "aoox",
+    "self-hosted",
+    "paas",
+    "docker",
+    "deploy",
+    "git-deploy",
+    "cli",
+    "nixpacks",
+    "railpack",
+    "traefik"
+  ],
+  "homepage": "https://aoox.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hideandseeklab/aoox-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hideandseeklab/aoox-cli/issues"
+  },
   "author": "hideandseeklab <hideandseek.developer@gmail.com>",
   "publishConfig": {
     "access": "public"
@@ -9,7 +30,6 @@
   "bin": {
     "aoox": "./bin/run.js"
   },
-  "bugs": "https://github.com/hideandseeklab/aoox-cli/issues",
   "dependencies": {
     "@inquirer/prompts": "^8.7.2",
     "@oclif/core": "^4",
@@ -42,10 +62,6 @@
     "./dist",
     "./oclif.manifest.json"
   ],
-  "homepage": "https://github.com/hideandseeklab/aoox-cli",
-  "keywords": [
-    "oclif"
-  ],
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "type": "module",
@@ -69,10 +85,6 @@
         ]
       }
     }
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/hideandseeklab/aoox-cli.git"
   },
   "scripts": {
     "build": "shx rm -rf dist && tsc -b",
