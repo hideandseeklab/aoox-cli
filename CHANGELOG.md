@@ -8,6 +8,22 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+### Added
+
+- `aoox install` now prepares the web terminal's SSH key itself: it creates `<dir>/secrets` (owned by uid 1000, mode 700),
+  generates the `terminal_ssh_key` ed25519 pair with `ssh-keygen` if missing, and adds the public key to the
+  `TERMINAL_SSH_USER` account's `~/.ssh/authorized_keys` (idempotent, correct modes and owner, never follows symlinks), so the terminal
+  works right after installing. Any problem is only a warning (the Settings > Terminal button is the fallback); skipped when not root,
+  not Linux, with an explicit key/password configured, or with the new `--no-terminal-authorize`. `aoox reinstall` does not touch it.
+
+### Changed
+
+- `aoox install` now defaults `TERMINAL_SSH_USER` to the person who ran `sudo` (`SUDO_USER`) instead of always
+  `root`, falling back to `root` when there is no sudo user. Cloud images such as Ubuntu usually disable SSH login
+  as root, so the web terminal failed with "SSH authentication failed for root@host.docker.internal" right after
+  installing. `--terminal-ssh-user` still wins, and existing installs (`aoox reinstall`, `.env.dist` merge) keep
+  their current value.
+
 ## [0.1.0-alpha.5] - 2026-10-02
 
 ### Changed

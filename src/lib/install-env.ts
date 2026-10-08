@@ -13,10 +13,33 @@ export interface InstallEnvOptions {
   postgresPassword: string
   publicApiUrl: string
   publicIp?: string
-  /** SSH user for the web terminal's host shell. Defaults to `root` — the installer itself requires it. */
+  /**
+   * SSH user for the web terminal's host shell. Defaults to `root` here (what a
+   * repair adds for an old install); `aoox install` passes
+   * `defaultTerminalSshUser()` — the person who ran sudo — instead.
+   */
   terminalSshUser?: string
   webDomain?: string
   webOrigin: string
+}
+
+/**
+ * Default `TERMINAL_SSH_USER` for a NEW install: the human who ran `sudo aoox
+ * install` (`SUDO_USER`). Cloud images (Ubuntu, Debian) usually disable SSH
+ * login as root and give root no authorized_keys, so defaulting to `root` made
+ * the web terminal fail for the very user who installed it. Falls back to
+ * `root` when there is no sudo user (logged in as root, or `SUDO_USER=root`)
+ * or the value is not a plain login name (it is written into `.env.dist`).
+ */
+export function defaultTerminalSshUser(env: {SUDO_USER?: string}): string {
+  const user = env.SUDO_USER?.trim()
+  if (!user || user === 'root' || !/^[a-z_][\w-]{0,31}$/i.test(user)) return 'root'
+  return user
+}
+
+/** `--terminal-ssh-user` wins when given; otherwise the sudo-user default. */
+export function resolveTerminalSshUser(flag: string | undefined, env: {SUDO_USER?: string}): string {
+  return flag || defaultTerminalSshUser(env)
 }
 
 /**

@@ -1,6 +1,6 @@
 import {expect} from 'chai'
 
-import {buildEnvFile} from '../../src/lib/install-env.js'
+import {buildEnvFile, defaultTerminalSshUser, resolveTerminalSshUser} from '../../src/lib/install-env.js'
 
 const base = {
   dockerGid: '999',
@@ -24,9 +24,28 @@ describe('buildEnvFile', () => {
     expect(env).to.include('INSTALL_DIR=/opt/aoox')
   })
 
-  it('defaults TERMINAL_SSH_USER to root — the install itself requires it', () => {
+  it('buildEnvFile alone still defaults TERMINAL_SSH_USER to root (what a reinstall repair adds)', () => {
     const env = buildEnvFile(base)
     expect(env).to.include('TERMINAL_SSH_USER=root')
+  })
+
+  it('defaultTerminalSshUser picks the human who ran sudo', () => {
+    expect(defaultTerminalSshUser({SUDO_USER: 'ubuntu'})).to.equal('ubuntu')
+  })
+
+  it('defaultTerminalSshUser falls back to root for SUDO_USER=root, unset, blank or odd values', () => {
+    expect(defaultTerminalSshUser({SUDO_USER: 'root'})).to.equal('root')
+    expect(defaultTerminalSshUser({})).to.equal('root')
+    expect(defaultTerminalSshUser({SUDO_USER: '  '})).to.equal('root')
+    expect(defaultTerminalSshUser({SUDO_USER: 'a\nPROXY_ACME_EMAIL=x'})).to.equal('root')
+  })
+
+  it('an explicit terminalSshUser beats the sudo user (same precedence install.ts uses)', () => {
+    expect(resolveTerminalSshUser('deploy', {SUDO_USER: 'ubuntu'})).to.equal('deploy')
+    expect(resolveTerminalSshUser(undefined, {SUDO_USER: 'ubuntu'})).to.equal('ubuntu')
+    expect(resolveTerminalSshUser(undefined, {})).to.equal('root')
+    const env = buildEnvFile({...base, terminalSshUser: resolveTerminalSshUser(undefined, {SUDO_USER: 'ubuntu'})})
+    expect(env).to.include('TERMINAL_SSH_USER=ubuntu')
   })
 
   it('honors a custom terminalSshUser', () => {

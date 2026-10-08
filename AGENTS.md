@@ -146,11 +146,26 @@ sederhana & standar seperti installer PaaS self-hosted lain, tanpa CLI perlu log
   domain (`--web-domain`+`--api-domain`, **wajib** `--acme-email` — tanpa itu resolver `le` yang
   dirujuk label `docker-compose.domain.yml` tidak pernah ada, https gagal diam-diam).
   `TERMINAL_SSH_HOST` selalu `host.docker.internal` (compose sudah menyediakan alias ini lewat
-  `extra_hosts`), dan `TERMINAL_SSH_USER` default **`root`** (`--terminal-ssh-user` untuk override)
-  karena instalasi sendiri mewajibkan root (`isRoot()`) — jadi fitur Terminal langsung siap dipakai
-  ke host aoox sendiri setelah instalasi, tanpa perlu buka menu Environment dulu. Kredensialnya
-  sendiri (public key platform) tetap butuh **satu langkah manual**: perintah otorisasi yang
-  ditampilkan di Settings → Terminal, karena API tidak bisa menulis `authorized_keys` host.
+  `extra_hosts`), dan `TERMINAL_SSH_USER` untuk instalasi BARU = **user manusia yang menjalankan sudo**
+  (`SUDO_USER`, `resolveTerminalSshUser()`/`defaultTerminalSshUser()` di `install-env.ts`, pure & di-tes),
+  `root` bila tidak ada `SUDO_USER`, `SUDO_USER=root`, atau nilainya bukan nama login polos; `--terminal-ssh-user`
+  eksplisit selalu menang. Dulu default selalu `root`, padahal image cloud (Ubuntu/Tencent) biasanya mematikan
+  login SSH root (`PermitRootLogin`) dan root tak punya `authorized_keys` — Terminal gagal "SSH authentication
+  failed for root@host.docker.internal" untuk orang yang baru memasang. `buildEnvFile` sendiri tetap default
+  `root` bila `terminalSshUser` kosong: itulah yang dipakai `aoox reinstall` (`defaults()`) untuk menambah key
+  yang hilang, dan `mergeEnv` tidak pernah menimpa nilai yang sudah ada — instalasi lama tidak berubah.
+  Key platform sekarang ikut disiapkan otomatis (lihat **Terminal key** di bawah); bila langkah itu dilewati/gagal,
+  fallback-nya tombol "authorize" di Settings → Terminal (`POST /terminal/authorize` di API) atau perintah otorisasi manual yang tampil di sana.
+- **Terminal key** (`src/lib/terminal-key.ts`, dipanggil `install.ts#authorizeTerminal` tepat setelah `.env.dist` ditulis; `aoox reinstall` TIDAK menyentuhnya).
+  **Spesifikasi perilaku — install.sh di aoox-landing harus identik** (urutan, nama, izin, comment):
+  1. Lewati (diam, kecuali opt-out) bila: `--no-terminal-authorize`; bukan Linux; bukan root; `TERMINAL_SSH_PRIVATE_KEY_FILE`/`TERMINAL_SSH_PASSWORD` terisi; `TERMINAL_SSH_USER` kosong/bukan nama login polos (`^[a-z_][\w-]{0,31}$`).
+  2. `<dir>/secrets` dibuat (`mkdir -p`), `chown 1000:1000` (user `node` di container api), `chmod 700`.
+  3. Bila `<dir>/secrets/terminal_ssh_key` belum ada: `ssh-keygen -q -t ed25519 -N "" -C aoox-terminal -f <dir>/secrets/terminal_ssh_key` (format OpenSSH), lalu privat `600`, `.pub` `644`, keduanya `chown 1000:1000`. Key yang sudah ada tidak diganti.
+  4. Baris public key = baris tak-kosong pertama `terminal_ssh_key.pub`, harus satu baris `ssh-<tipe> <base64> [comment]`.
+  5. Akun `TERMINAL_SSH_USER` dari `getent passwd` (fallback `/etc/passwd`): uid, gid, home; home harus absolut, bukan `/`, tanpa `..`.
+  6. `~/.ssh` (`mkdir -p`, `chmod 700`) dan `~/.ssh/authorized_keys` (dibuat bila perlu, `chmod 600`); baris key ditambahkan hanya bila belum ada baris yang **persis sama** (tambahkan newline bila file tak diakhiri newline, key di baris sendiri); `chown uid:gid` untuk `.ssh` dan `authorized_keys` (tidak rekursif). Menolak (galat) bila `.ssh` atau `authorized_keys` symlink — jalan sebagai root, jangan ikuti tautan milik user.
+  7. Tidak pernah menggagalkan instalasi: galat apa pun → peringatan `terminal key not authorized automatically; use Settings > Terminal > authorize (<alasan>)`; sukses → `terminal key authorized for <user>` / `already authorized for <user>`.
+  Kompatibilitas diuji nyata (node:22-bookworm, ssh-keygen OpenSSH asli): `ssh2` `utils.parseKey` di API membaca key hasil `ssh-keygen`, `publicKeyLine()` API menurunkan baris yang **sama persis** dengan `.pub` (comment `aoox-terminal` ikut). Logika murni (path, argumen keygen, izin, baris, idempotensi, symlink) di `test/lib/terminal-key.test.ts` dengan file system sementara (kasus izin/pemilik dilewati di Windows). Belum diuji: host Linux dengan sshd sungguhan.
 - `system.ts` (sebagian besar impure — exec/spawn, tidak di-unit-test kecuali `isIpv4` yang pure):
   `isRoot()` (`process.getuid()`, wajib — tulis ke `/opt` + kelola Docker), `commandExists`/
   `dockerRunning` (`docker info`), `dockerSocketGid()` (`stat -c %g /var/run/docker.sock` — dipakai

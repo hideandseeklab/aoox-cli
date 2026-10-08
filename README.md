@@ -187,7 +187,7 @@ Pasang aoox (postgres + api + web) di VPS baru lewat Docker Compose
 ```
 USAGE
   $ aoox install [--acme-email <value>] [--admin-name <value> --admin-email <value>] [--admin-password
-    <value> ] [--api-domain <value> --web-domain <value>] [--dir <value>] [--force] [--terminal-ssh-user <value>] [-y]
+    <value> ] [--api-domain <value> --web-domain <value>] [--dir <value>] [--force] [--no-terminal-authorize] [--terminal-ssh-user <value>] [-y]
 
 FLAGS
   -y, --yes                        Jangan tanya konfirmasi apa pun
@@ -198,8 +198,10 @@ FLAGS
       --api-domain=<value>         Domain untuk API, lewat proxy bawaan
       --dir=<value>                [default: /opt/aoox] Folder instalasi
       --force                      Timpa instalasi yang sudah ada di --dir
-      --terminal-ssh-user=<value>  [default: root] User SSH untuk fitur Terminal web masuk ke host ini (instalasi
-                                   berjalan sebagai root)
+      --no-terminal-authorize      Jangan buat/otorisasi key SSH Terminal web otomatis (lakukan lewat Settings >
+                                   Terminal)
+      --terminal-ssh-user=<value>  User SSH untuk fitur Terminal web masuk ke host ini (default: user yang menjalankan
+                                   sudo, atau root bila tidak ada)
       --web-domain=<value>         Domain untuk panel web, lewat proxy bawaan
 
 DESCRIPTION

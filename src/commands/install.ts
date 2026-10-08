@@ -6,8 +6,10 @@ import {resolve} from 'node:path'
 import {fileURLToPath} from 'node:url'
 
 import {dockerInherit} from '../lib/docker.js'
-import {buildEnvFile} from '../lib/install-env.js'
+import {buildEnvFile, resolveTerminalSshUser} from '../lib/install-env.js'
+import {parseEnv} from '../lib/reinstall.js'
 import {commandExists, detectPublicIp, dockerRunning, dockerSocketGid, isRoot, runShellInherit} from '../lib/system.js'
+import {authorizeTerminalKey, skipReason} from '../lib/terminal-key.js'
 
 const DOCKER_INSTALL_SCRIPT = 'curl -fsSL https://get.docker.com | sh'
 /** How long to wait for the API to answer after `docker compose up -d` (migrations run on boot). */
@@ -28,9 +30,13 @@ export default class Install extends Command {
     'api-domain': Flags.string({dependsOn: ['web-domain'], description: 'Domain untuk API, lewat proxy bawaan'}),
     dir: Flags.string({default: '/opt/aoox', description: 'Folder instalasi'}),
     force: Flags.boolean({default: false, description: 'Timpa instalasi yang sudah ada di --dir'}),
+    'no-terminal-authorize': Flags.boolean({
+      default: false,
+      description: 'Jangan buat/otorisasi key SSH Terminal web otomatis (lakukan lewat Settings > Terminal)',
+    }),
     'terminal-ssh-user': Flags.string({
-      default: 'root',
-      description: 'User SSH untuk fitur Terminal web masuk ke host ini (instalasi berjalan sebagai root)',
+      description:
+        'User SSH untuk fitur Terminal web masuk ke host ini (default: user yang menjalankan sudo, atau root bila tidak ada)',
     }),
     'web-domain': Flags.string({dependsOn: ['api-domain'], description: 'Domain untuk panel web, lewat proxy bawaan'}),
     yes: Flags.boolean({char: 'y', default: false, description: 'Jangan tanya konfirmasi apa pun'}),
@@ -74,11 +80,12 @@ export default class Install extends Command {
       postgresPassword: randomBytes(24).toString('hex'),
       publicApiUrl,
       publicIp,
-      terminalSshUser: flags['terminal-ssh-user'],
+      terminalSshUser: resolveTerminalSshUser(flags['terminal-ssh-user'], process.env),
       webDomain: flags['web-domain'],
       webOrigin,
     })
     await writeFile(`${dir}/.env.dist`, env, {mode: 0o600})
+    this.authorizeTerminal(dir, env, flags['no-terminal-authorize'])
 
     this.log('==> Menjalankan docker compose up -d')
     const composeArgs = ['compose', '-f', 'docker-compose.dist.yml']
@@ -109,6 +116,27 @@ export default class Install extends Command {
     if (flags['web-domain'] && !flags['acme-email']) {
       this.error('--web-domain/--api-domain butuh --acme-email (sertifikat Let’s Encrypt untuk domain itu).')
     }
+  }
+
+  /** Never fails the install: a problem becomes a warning (the Settings button is the fallback). */
+  private authorizeTerminal(dir: string, envFile: string, optOut: boolean): void {
+    const vars = parseEnv(envFile)
+    const reason = skipReason({
+      explicitCredential: Boolean(vars.get('TERMINAL_SSH_PRIVATE_KEY_FILE') || vars.get('TERMINAL_SSH_PASSWORD')),
+      noAuthorize: optOut,
+      platform: process.platform,
+      root: isRoot(),
+      user: vars.get('TERMINAL_SSH_USER'),
+    })
+    if (reason) {
+      if (optOut) this.log(`==> Terminal: key tidak diotorisasi otomatis (${reason}).`)
+      return
+    }
+
+    this.log('==> Menyiapkan key SSH untuk Terminal web')
+    const outcome = authorizeTerminalKey({installDir: resolve(dir), user: vars.get('TERMINAL_SSH_USER')!})
+    if (outcome.ok) this.log(outcome.message)
+    else this.warn(outcome.message)
   }
 
   /** `numeric:numeric` works even without a matching /etc/passwd entry on the host. */
