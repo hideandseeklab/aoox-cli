@@ -1,5 +1,9 @@
 # aoox-cli
 
+## Language
+
+- Write everything in this repository in English: AGENTS.md, README, CONTRIBUTING, CHANGELOG, code comments and commit messages. Existing Indonesian text is being translated gradually; do not add new Indonesian text.
+
 CLI (`aoox`) untuk aoox — dipasang di laptop developer, bukan di server. Tugas utamanya:
 build image secara lokal, push ke registry aoox, lalu memicu deploy lewat API panel
 (`../aoox-api`). Panel web ada di `../aoox-web`.
