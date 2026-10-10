@@ -3,7 +3,7 @@ import {dirname, join} from 'node:path'
 
 /**
  * What `aoox login` stores. The token is a platform API token (`aoox_…`)
- * created in the panel under Settings → Akun; it acts as its owner.
+ * created in the panel under Settings → Account; it acts as its owner.
  */
 export interface CliConfig {
   token: string

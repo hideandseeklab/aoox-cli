@@ -4,281 +4,275 @@
 
 - Write everything in this repository in English: AGENTS.md, README, CONTRIBUTING, CHANGELOG, code comments and commit messages. Existing Indonesian text is being translated gradually; do not add new Indonesian text.
 
-CLI (`aoox`) untuk aoox — dipasang di laptop developer, bukan di server. Tugas utamanya:
-build image secara lokal, push ke registry aoox, lalu memicu deploy lewat API panel
-(`../aoox-api`). Panel web ada di `../aoox-web`.
+CLI (`aoox`) for aoox — installed on the developer's laptop, not on a server. Its main job:
+build the image locally, push it to the aoox registry, then trigger a deploy through the panel API
+(`../aoox-api`). The web panel lives in `../aoox-web`.
 
-## Perintah
+## Commands
 
-- `npm run build` — `tsc -b` ke `dist/`
-- `npm test` — mocha (`posttest` otomatis menjalankan `npm run lint`)
+- `npm run build` — `tsc -b` to `dist/`
+- `npm test` — mocha (`posttest` automatically runs `npm run lint`)
 - `npm run lint` — eslint (`eslint-config-oclif`)
-- `./bin/dev.js <perintah>` — jalankan dari TypeScript tanpa build (ts-node/esm)
-- `./bin/run.js <perintah>` — jalankan hasil build di `dist/`
+- `./bin/dev.js <perintah>` — run from TypeScript without a build (ts-node/esm)
+- `./bin/run.js <perintah>` — run the built output in `dist/`
 
 ## Git
 
-- Jangan commit atau push kecuali diperintahkan secara eksplisit oleh user.
+- Do not commit or push unless explicitly instructed to by the user.
 
-## Struktur
+## Structure
 
-- `src/commands/<nama>.ts` — satu file = satu perintah (`export default class extends Command`).
-  Nama file menentukan nama perintah; subfolder jadi topic. Jangan daftarkan manual di mana pun:
-  `oclif.commands` di `package.json` menunjuk `./dist/commands`.
-- `src/lib/` — semua yang bukan perintah (config, klien API, tipe, flag bersama).
-- `test/**/*.test.ts` — mocha + chai. Helper murni diuji langsung; perintah yang menyentuh
-  jaringan **tidak** diuji (belum ada mock HTTP) — `@oclif/test` `runCommand` disediakan template
-  untuk perintah yang tidak butuh jaringan.
+- `src/commands/<nama>.ts` — one file = one command (`export default class extends Command`).
+  The file name determines the command name; subfolders become topics. Do not register manually anywhere:
+  `oclif.commands` in `package.json` points to `./dist/commands`.
+- `src/lib/` — everything that is not a command (config, API client, types, shared flags).
+- `test/**/*.test.ts` — mocha + chai. Pure helpers are tested directly; commands that touch
+  the network are **not** tested (there is no HTTP mock yet) — a `@oclif/test` `runCommand` template is provided
+  for commands that do not need the network.
 
 ## ESM
 
-`"type": "module"` dengan `module`/`moduleResolution` = `Node16`. Konsekuensi: **semua import
-relatif wajib berekstensi `.js`** walau filenya `.ts` (`import {api} from '../lib/api.js'`).
-Salah di sini baru ketahuan saat runtime, bukan saat `tsc`.
+`"type": "module"` with `module`/`moduleResolution` = `Node16`. Consequence: **all relative imports
+must have a `.js` extension** even though the file is `.ts` (`import {api} from '../lib/api.js'`).
+A mistake here only surfaces at runtime, not during `tsc`.
 
-## Nama executable
+## Executable name
 
-Satu nama kanonik: `aoox`.
+One canonical name: `aoox`.
 
-- `bin` (npm): satu entri, `{"aoox": "./bin/run.js"}`. Ini yang dibuat npm saat `npm i -g`;
-  nama yang tidak terdaftar di sini tidak akan ada.
-- `oclif.bin`: `aoox` — dipakai untuk teks help (`$ aoox …`), prefix env var, dan nama folder
-  default.
-- `oclif.dirname`: `aoox` → `this.config.configDir` = `%LOCALAPPDATA%\aoox` (Windows) atau
-  `~/.config/aoox`. Kalau tidak diisi, ia ikut `oclif.bin`.
+- `bin` (npm): one entry, `{"aoox": "./bin/run.js"}`. This is what npm creates on `npm i -g`;
+  a name not registered here will not exist.
+- `oclif.bin`: `aoox` — used for help text (`$ aoox …`), the env var prefix, and the
+  default folder name.
+- `oclif.dirname`: `aoox` → `this.config.configDir` = `%LOCALAPPDATA%\aoox` (Windows) or
+  `~/.config/aoox`. If not set, it follows `oclif.bin`.
 
-## Konfigurasi & kredensial
+## Configuration & credentials
 
-- `aoox login` menyimpan `{url, token}` di `<configDir>/config.json` dengan mode `0600`
-  (`chmod` menyusul `writeFile` karena `mode` hanya berlaku saat file dibuat; gagal di Windows diabaikan).
-- Token = **API token platform** (`aoox_…`, dibuat di panel Settings → Akun), bukan JWT sesi.
-  Ia bertindak sebagai user pemiliknya dan dibaca ulang dari DB tiap request di sisi API.
-- Flag `--url`/`--token` ada di `src/lib/flags.ts` dan membawa `env:` oclif
-  (`AOOX_URL`, `AOOX_TOKEN`), jadi CI tidak perlu `aoox login` dan fallback-nya
-  tetap muncul di `--help`.
-- `resolveCredentials()` (pure, di-unit-test): flag/env menang per field, **kecuali** token
-  tersimpan tidak pernah dikirim ke panel lain — `--url` ke host berbeda tanpa `--token` ditolak,
-  supaya kredensial tidak bocor ke host yang salah.
-- Token tidak diminta lewat argumen secara default: `aoox login` mem-prompt dengan mask
-  (`@inquirer/prompts`), karena token di command line masuk history shell dan daftar proses.
-  Tanpa TTY (CI) perintahnya menolak dan menyuruh memakai flag/env.
+- `aoox login` stores `{url, token}` in `<configDir>/config.json` with mode `0600`
+  (`chmod` follows `writeFile` because `mode` only applies when the file is created; failure on Windows is ignored).
+- Token = **platform API token** (`aoox_…`, created in the panel under Settings → Account), not a session JWT.
+  It acts as its owner user and is re-read from the DB on every request on the API side.
+- The `--url`/`--token` flags are in `src/lib/flags.ts` and carry oclif `env:`
+  (`AOOX_URL`, `AOOX_TOKEN`), so CI does not need `aoox login` and the fallback
+  still shows in `--help`.
+- `resolveCredentials()` (pure, unit-tested): flag/env wins per field, **except** that a
+  stored token is never sent to another panel — `--url` pointing to a different host without `--token` is rejected,
+  so credentials do not leak to the wrong host.
+- By default the token is not requested as an argument: `aoox login` prompts with masking
+  (`@inquirer/prompts`), because a token on the command line ends up in shell history and the process list.
+  Without a TTY (CI) the command refuses and tells you to use the flag/env.
 
-## Klien API (`src/lib/api.ts`)
+## API client (`src/lib/api.ts`)
 
-- `fetch` global (Node ≥ 22; `engines` dinaikkan ke 22 karena aturan lint `n/no-unsupported-features`
-  benar: `fetch`/`Response` baru stabil di Node 21).
-- Header `connection: close`: satu run CLI cuma 1–2 request, jadi keep-alive tidak berguna —
-  server boleh menutup socket-nya lebih awal. Ini **bukan** penambal crash Windows di bawah
-  (awalnya dikira begitu — ternyata cuma menutupi kasus 1 request; lihat `windows-exit-fix.ts`
-  untuk penambal yang sebenarnya).
-- Error body NestJS `{statusCode, error, message}` di-ekstrak `messageFromBody()` (pure, di-unit-test);
-  `message` bisa array saat `ValidationPipe` menolak DTO.
-- `ApiError.status === 0` berarti panel tidak terjangkau (DNS/refused/TLS/timeout), bukan balasan HTTP.
+- Global `fetch` (Node ≥ 22; `engines` was raised to 22 because the lint rule `n/no-unsupported-features`
+  is correct: `fetch`/`Response` only became stable in Node 21).
+- `connection: close` header: one CLI run makes only 1–2 requests, so keep-alive is useless —
+  the server may close its socket early. This is **not** the Windows crash patch below
+  (initially thought to be, but it only covers the 1-request case; see `windows-exit-fix.ts`
+  for the actual patch).
+- NestJS error body `{statusCode, error, message}` is extracted by `messageFromBody()` (pure, unit-tested);
+  `message` can be an array when `ValidationPipe` rejects a DTO.
+- `ApiError.status === 0` means the panel was unreachable (DNS/refused/TLS/timeout), not an HTTP reply.
 
-## Crash Windows: `process.exit()` setelah ≥2 `fetch()` (`src/lib/windows-exit-fix.ts`)
+## Windows crash: `process.exit()` after ≥2 `fetch()` (`src/lib/windows-exit-fix.ts`)
 
-- **Gejala**: di Windows, tiap kali sebuah command oclif **gagal** (menyentuh `this.error()`/`this.exit()`
-  setelah **dua atau lebih** panggilan `fetch()` selesai) — Node crash: `Assertion failed:
-  !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 94`, dan exit code asli (mis. 2)
-  tergantikan **127**. Terbukti lewat isolasi (`probe*.mjs` di scratchpad, tanpa oclif sama sekali):
-  bukan soal socket keep-alive (header `connection: close` maupun `getGlobalDispatcher().close()`
-  eksplisit **tidak** membantu di atas 1 request), dan bukan soal event-loop tick (`setImmediate`
-  tidak cukup) — hanya **exit alami** (loop kosong tanpa `process.exit()` eksplisit) yang selalu bersih;
-  delay tetap (`setTimeout`) baru "menolong" di atas ±100 ms, yang tidak layak dipercaya atau dibayar
-  di tiap error. Ini bug race libuv/undici Windows di teardown socket, di luar kendali userland —
-  **bukan** bug di kode CLI ini.
-- **Kenapa ini penting untuk CLI ini**: `@oclif/core`'s `errors/handle.js` memanggil `process.exit()`
-  di **setiap** command yang error (termasuk semua `this.error()`/`this.exit()` di sini) — jadi tiap
-  command yang gagal setelah ≥2 request (mis. `aoox link` dengan `--app` salah: `GET /projects` lalu
-  `GET /applications?projectId=`) kena.
-- **Penambal** (`applyWindowsExitFix()`, dipasang paling awal di `bin/run.js` **dan** `bin/dev.js`,
-  sebelum `execute()`/`fetch()` apa pun): di Windows saja, mengganti `process.exit` dengan versi yang
-  cuma menyetel `process.exitCode` lalu **kembali** (tidak benar-benar keluar) — Node lalu keluar
-  sendiri begitu event loop kosong, yang dalam praktiknya seketika. Diuji lewat objek `proc` palsu
-  (`ExitLike`, `test/lib/windows-exit-fix.test.ts`) supaya tidak perlu memutasi `process` sungguhan
-  di proses test mocha sendiri.
-- **Trade-off yang diterima**: cabang SIGINT di `handle.js` memanggil `process.exit(1)` lalu **terus
-  jalan** (mencetak error) sampai `process.exit()` terakhirnya sendiri di akhir fungsi — dengan
-  penambal ini, lanjutan itu jadi teramati (bukan langsung berhenti). Tidak masalah untuk command
-  yang ada sekarang (tidak ada yang bergantung Ctrl+C sinkron); tinjau ulang kalau `aoox logs`/`aoox
-  deploy` streaming nanti butuh itu.
+- **Symptom**: on Windows, every time an oclif command **fails** (touching `this.error()`/`this.exit()`
+  after **two or more** `fetch()` calls have completed), Node crashes: `Assertion failed:
+  !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 94`, and the original exit code (e.g. 2)
+  is replaced by **127**. Proven through isolation (`probe*.mjs` in the scratchpad, without oclif at all):
+  it is not about keep-alive sockets (neither the `connection: close` header nor an explicit `getGlobalDispatcher().close()`
+  **helps** beyond 1 request), and not about the event-loop tick (`setImmediate`
+  is not enough) — only a **natural exit** (empty loop without an explicit `process.exit()`) is always clean;
+  a fixed delay (`setTimeout`) only "helps" above ±100 ms, which is not worth trusting or paying on every error.
+  This is a libuv/undici Windows race bug in socket teardown, beyond userland control —
+  **not** a bug in this CLI's code.
+- **Why this matters for this CLI**: `@oclif/core`'s `errors/handle.js` calls `process.exit()`
+  on **every** errored command (including all `this.error()`/`this.exit()` here) — so every
+  command that fails after ≥2 requests (e.g. `aoox link` with a wrong `--app`: `GET /projects` then
+  `GET /applications?projectId=`) is hit.
+- **Patch** (`applyWindowsExitFix()`, installed as early as possible in `bin/run.js` **and** `bin/dev.js`,
+  before any `execute()`/`fetch()`): on Windows only, it replaces `process.exit` with a version that
+  only sets `process.exitCode` and then **returns** (does not actually exit) — Node then exits
+  on its own once the event loop is empty, which in practice is immediate. Tested with a fake `proc` object
+  (`ExitLike`, `test/lib/windows-exit-fix.test.ts`) so there is no need to mutate the real `process`
+  inside the mocha test process itself.
+- **Accepted trade-off**: the SIGINT branch in `handle.js` calls `process.exit(1)` and then **keeps
+  running** (printing the error) until its own final `process.exit()` at the end of the function — with
+  this patch, that continuation becomes observable (it no longer stops immediately). This is not a problem for
+  the commands that exist now (none depends on synchronous Ctrl+C); revisit if `aoox logs`/`aoox
+  deploy` streaming later needs it.
 
-## Catatan oclif v4
+## oclif v4 notes
 
-- `@oclif/core` v4 **tidak punya `ux.prompt`** (hanya `action`, `colorize`, `error`, `exit`,
-  `stderr`, `stdout`, `warn`) — prompt memakai `@inquirer/prompts`.
-- `static enableJsonFlag = true` → nilai yang di-`return` dari `run()` dicetak sebagai JSON saat
-  `--json`, dan `this.log` otomatis dibungkam, jadi output JSON tetap sah.
-- `this.error(msg, {suggestions})` keluar dengan code 2 dan mencetak "Try this".
+- `@oclif/core` v4 **has no `ux.prompt`** (only `action`, `colorize`, `error`, `exit`,
+  `stderr`, `stdout`, `warn`) — prompts use `@inquirer/prompts`.
+- `static enableJsonFlag = true` → the value `return`ed from `run()` is printed as JSON when
+  `--json` is used, and `this.log` is automatically muted, so the JSON output stays valid.
+- `this.error(msg, {suggestions})` exits with code 2 and prints "Try this".
 
-## Tipe dari API
+## Types from the API
 
-Tidak ada paket bersama. Tipe respons disalin tangan ke `src/lib/types.ts` — pola yang sama
-dengan web (`src/features/**/*.entity.ts`). Tiap tambahan harus dicocokkan dengan DTO di
+There is no shared package. Response types are copied by hand into `src/lib/types.ts` — the same pattern
+as the web app (`src/features/**/*.entity.ts`). Every addition must be matched against the DTO in
 `aoox-api`.
 
-## Status & rencana
+## Status & plans
 
-Sudah ada: `aoox login`, `aoox whoami`, `aoox link`, `aoox deploy`, `aoox install`.
-Berikutnya: `aoox logs` (Socket.IO `/logs` + tiket 60 detik, protokolnya dicermin dari API) — `aoox
-deploy` sekarang sudah mem-follow log deployment sendiri lewat polling, jadi `aoox logs` di atas
-Socket.IO baru dibutuhkan untuk log container live di luar konteks satu deploy.
+Already available: `aoox login`, `aoox whoami`, `aoox link`, `aoox deploy`, `aoox install`.
+Next: `aoox logs` (Socket.IO `/logs` + 60-second ticket, its protocol mirrored from the API) — `aoox
+deploy` now already follows the deployment log itself via polling, so the Socket.IO-based `aoox logs` above is
+only needed for live container logs outside the context of a single deploy.
 
 ## `aoox install` (`src/commands/install.ts`, `src/lib/{install-env,system}.ts`, `assets/install/`)
 
-Bootstrap aoox di VPS **baru** lewat Docker Compose — dijalankan **di VPS itu sendiri**
-(`sudo aoox install`), bukan dari laptop lewat SSH (opsi itu diajukan lalu ditolak user — lebih
-sederhana & standar seperti installer PaaS self-hosted lain, tanpa CLI perlu logika SSH client sendiri).
-- **File compose dan `.env.dist.example` di-bundle di dalam paket CLI** (`assets/install/`), **bukan**
-  di-`curl` dari `aoox-api` saat instalasi — dicoba dulu (`curl .../-/raw/main/...`), repo-nya
-  **private** dan anonymous fetch 302 ke halaman login GitLab. Jadi zero dependensi jaringan ke
-  private repo saat instalasi (lebih sedikit yang bisa gagal, jalan walau GitLab down); **konsekuensinya
-  file itu harus disinkronkan tangan** kalau `docker-compose.dist.yml`/`docker-compose.domain.yml` di
-  `aoox-api` berubah — dicatat di `assets/install/README.md`. Resolusi path pakai
-  `import.meta.url` (`../../assets/install/` dari file command) — sama kedalaman relatif dari
-  `dist/commands/install.js` (prod) maupun `src/commands/install.ts` (`bin/dev.js`), diverifikasi
-  keduanya resolve ke folder yang sama.
-- `buildEnvFile()` (`install-env.ts`, pure, di-unit-test) menulis `.env.dist` **baru dari nol**
-  (bukan template-fill file contoh yang penuh komentar — rapuh disinkronkan dengan prosa), dengan key
-  yang sama yang dibaca compose. **Ada tes regresi drift** (`install-env-coverage.test.ts`): membaca
-  `${VAR}` apa saja yang direferensikan kedua file compose ter-bundle dan menuntut `buildEnvFile`
-  menulis semuanya (kecuali `API_IMAGE`/`WEB_IMAGE`/`JWT_EXPIRES_IN`, yang sengaja punya default di
-  level compose dan tidak ditulis) — tes ini yang menemukan `COOKIE_SECURE` awalnya lupa ditulis.
-  Secret (`POSTGRES_PASSWORD`, `JWT_SECRET`, `ENCRYPTION_KEY`) dari `crypto.randomBytes`.
-  `PUBLIC_IP`/`WEB_ORIGIN`/`PUBLIC_API_URL` dari IP publik yang dideteksi (`detectPublicIp()`,
-  `https://api.ipify.org` — jasa yang sama yang dipercaya `check-domain-dns` di API) kecuali mode
-  domain (`--web-domain`+`--api-domain`, **wajib** `--acme-email` — tanpa itu resolver `le` yang
-  dirujuk label `docker-compose.domain.yml` tidak pernah ada, https gagal diam-diam).
-  `TERMINAL_SSH_HOST` selalu `host.docker.internal` (compose sudah menyediakan alias ini lewat
-  `extra_hosts`), dan `TERMINAL_SSH_USER` untuk instalasi BARU = **user manusia yang menjalankan sudo**
-  (`SUDO_USER`, `resolveTerminalSshUser()`/`defaultTerminalSshUser()` di `install-env.ts`, pure & di-tes),
-  `root` bila tidak ada `SUDO_USER`, `SUDO_USER=root`, atau nilainya bukan nama login polos; `--terminal-ssh-user`
-  eksplisit selalu menang. Dulu default selalu `root`, padahal image cloud (Ubuntu/Tencent) biasanya mematikan
-  login SSH root (`PermitRootLogin`) dan root tak punya `authorized_keys` — Terminal gagal "SSH authentication
-  failed for root@host.docker.internal" untuk orang yang baru memasang. `buildEnvFile` sendiri tetap default
-  `root` bila `terminalSshUser` kosong: itulah yang dipakai `aoox reinstall` (`defaults()`) untuk menambah key
-  yang hilang, dan `mergeEnv` tidak pernah menimpa nilai yang sudah ada — instalasi lama tidak berubah.
-  Key platform sekarang ikut disiapkan otomatis (lihat **Terminal key** di bawah); bila langkah itu dilewati/gagal,
-  fallback-nya tombol "authorize" di Settings → Terminal (`POST /terminal/authorize` di API) atau perintah otorisasi manual yang tampil di sana.
-- **Terminal key** (`src/lib/terminal-key.ts`, dipanggil `install.ts#authorizeTerminal` tepat setelah `.env.dist` ditulis; `aoox reinstall` TIDAK menyentuhnya).
-  **Spesifikasi perilaku — install.sh di aoox-landing harus identik** (urutan, nama, izin, comment):
-  1. Lewati (diam, kecuali opt-out) bila: `--no-terminal-authorize`; bukan Linux; bukan root; `TERMINAL_SSH_PRIVATE_KEY_FILE`/`TERMINAL_SSH_PASSWORD` terisi; `TERMINAL_SSH_USER` kosong/bukan nama login polos (`^[a-z_][\w-]{0,31}$`).
-  2. `<dir>/secrets` dibuat (`mkdir -p`), `chown 1000:1000` (user `node` di container api), `chmod 700`.
-  3. Bila `<dir>/secrets/terminal_ssh_key` belum ada: `ssh-keygen -q -t ed25519 -N "" -C aoox-terminal -f <dir>/secrets/terminal_ssh_key` (format OpenSSH), lalu privat `600`, `.pub` `644`, keduanya `chown 1000:1000`. Key yang sudah ada tidak diganti.
-  4. Baris public key = baris tak-kosong pertama `terminal_ssh_key.pub`, harus satu baris `ssh-<tipe> <base64> [comment]`.
-  5. Akun `TERMINAL_SSH_USER` dari `getent passwd` (fallback `/etc/passwd`): uid, gid, home; home harus absolut, bukan `/`, tanpa `..`.
-  6. `~/.ssh` (`mkdir -p`, `chmod 700`) dan `~/.ssh/authorized_keys` (dibuat bila perlu, `chmod 600`); baris key ditambahkan hanya bila belum ada baris yang **persis sama** (tambahkan newline bila file tak diakhiri newline, key di baris sendiri); `chown uid:gid` untuk `.ssh` dan `authorized_keys` (tidak rekursif). Menolak (galat) bila `.ssh` atau `authorized_keys` symlink — jalan sebagai root, jangan ikuti tautan milik user.
-  7. Tidak pernah menggagalkan instalasi: galat apa pun → peringatan `terminal key not authorized automatically; use Settings > Terminal > authorize (<alasan>)`; sukses → `terminal key authorized for <user>` / `already authorized for <user>`.
-  Kompatibilitas diuji nyata (node:22-bookworm, ssh-keygen OpenSSH asli): `ssh2` `utils.parseKey` di API membaca key hasil `ssh-keygen`, `publicKeyLine()` API menurunkan baris yang **sama persis** dengan `.pub` (comment `aoox-terminal` ikut). Logika murni (path, argumen keygen, izin, baris, idempotensi, symlink) di `test/lib/terminal-key.test.ts` dengan file system sementara (kasus izin/pemilik dilewati di Windows). Belum diuji: host Linux dengan sshd sungguhan.
-- `system.ts` (sebagian besar impure — exec/spawn, tidak di-unit-test kecuali `isIpv4` yang pure):
-  `isRoot()` (`process.getuid()`, wajib — tulis ke `/opt` + kelola Docker), `commandExists`/
-  `dockerRunning` (`docker info`), `dockerSocketGid()` (`stat -c %g /var/run/docker.sock` — dipakai
-  `DOCKER_GID` di compose, gotcha yang didokumentasikan manual sekarang otomatis), `runShellInherit`
-  (dipakai untuk `curl -fsSL https://get.docker.com | sh` — **hanya setelah konfirmasi**, kecuali
-  `--yes`; instalasi Docker itu sendiri sistem-lebar, bukan tindakan diam-diam).
-- Alur `run()`: platform harus Linux + root → (Docker belum ada/jalan? tawarkan pasang) → konfirmasi
-  rencana (`--force` untuk menimpa `--dir` yang sudah ada, `--yes` melewati semua prompt) → salin
-  compose ter-bundle ke `--dir` → `chown 1000:1000 <dir>/secrets` (gotcha EACCES terminal SSH key yang
-  didokumentasikan di compose comment — sekarang otomatis) → `.env.dist` → `docker compose … up -d`
-  (lewat `dockerInherit` yang sama dengan `aoox deploy`) → poll `GET localhost:3001/auth/setup-status`
-  sampai API benar-benar siap (migrasi jalan saat boot, "container up" ≠ "siap") → cetak URL + info
-  `/setup` (kecuali `--admin-email` diisi, non-interaktif).
-- **Diverifikasi**: resolusi path asset (dist & dev mode, keduanya nyata ada di disk), tes drift
-  cakupan env vs compose ter-bundle, precondition gate (bukan Linux → error jelas, `--api-domain`
-  tanpa `--web-domain` → ditolak `dependsOn` oclif sendiri sebelum kode ini jalan sama sekali; keduanya
-  exit 2 bersih, bukan crash Windows karena terjadi sebelum `fetch` apa pun). **Belum diuji hidup**
-  di VPS Linux sungguhan (tidak tersedia di sesi ini) — `docker compose up -d`, instalasi Docker
-  otomatis, dan polling `/setup-status` mengandalkan `dockerInherit`/`fetch` yang sudah terbukti di
-  `aoox deploy`, tapi jalur orkestrasi penuh `install.ts` sendiri belum dicoba end-to-end nyata.
+Bootstraps aoox on a **new** VPS via Docker Compose — run **on the VPS itself**
+(`sudo aoox install`), not from the laptop over SSH (that option was proposed and then rejected by the user — simpler & standard
+like other self-hosted PaaS installers, with no need for the CLI to carry its own SSH client logic).
+- **The compose file and `.env.dist.example` are bundled inside the CLI package** (`assets/install/`), **not**
+  `curl`ed from `aoox-api` during installation — tried first (`curl .../-/raw/main/...`), the repo is
+  **private** and an anonymous fetch returns 302 to the GitLab login page. So there is zero network dependency on the
+  private repo during installation (fewer things that can fail, works even when GitLab is down); **the consequence:
+  that file must be synced by hand** whenever `docker-compose.dist.yml`/`docker-compose.domain.yml` in
+  `aoox-api` changes — recorded in `assets/install/README.md`. Path resolution uses
+  `import.meta.url` (`../../assets/install/` from the command file) — the same relative depth from
+  `dist/commands/install.js` (prod) and `src/commands/install.ts` (`bin/dev.js`), verified that
+  both resolve to the same folder.
+- `buildEnvFile()` (`install-env.ts`, pure, unit-tested) writes a **brand-new** `.env.dist` from scratch
+  (not a template-fill of the commented example file — fragile to keep in sync with prose), with the same keys the compose file reads. **There is a drift regression test** (`install-env-coverage.test.ts`): it reads every `${VAR}` that both bundled compose files reference and requires `buildEnvFile`
+  to write all of them (except `API_IMAGE`/`WEB_IMAGE`/`JWT_EXPIRES_IN`, which deliberately have defaults at the
+  compose level and are not written) — this test is what caught `COOKIE_SECURE` being initially forgotten.
+  Secrets (`POSTGRES_PASSWORD`, `JWT_SECRET`, `ENCRYPTION_KEY`) come from `crypto.randomBytes`.
+  `PUBLIC_IP`/`WEB_ORIGIN`/`PUBLIC_API_URL` come from the detected public IP (`detectPublicIp()`,
+  `https://api.ipify.org` — the same service trusted by `check-domain-dns` in the API) except in domain mode
+  (`--web-domain`+`--api-domain`, **requires** `--acme-email` — without it the `le` resolver
+  referenced by the `docker-compose.domain.yml` labels never exists, and https fails silently).
+  `TERMINAL_SSH_HOST` is always `host.docker.internal` (compose already provides this alias via
+  `extra_hosts`), and `TERMINAL_SSH_USER` for a NEW install = **the human user who ran sudo**
+  (`SUDO_USER`, `resolveTerminalSshUser()`/`defaultTerminalSshUser()` in `install-env.ts`, pure & tested),
+  `root` when there is no `SUDO_USER`, `SUDO_USER=root`, or the value is not a plain login name; an explicit `--terminal-ssh-user`
+  always wins. Previously the default was always `root`, even though cloud images (Ubuntu/Tencent) usually disable
+  SSH login for root (`PermitRootLogin`) and root has no `authorized_keys` — Terminal failed with "SSH authentication
+  failed for root@host.docker.internal" for people who had just installed. `buildEnvFile` itself still defaults to
+  `root` when `terminalSshUser` is empty: that is what `aoox reinstall` (`defaults()`) uses to add missing keys,
+  and `mergeEnv` never overwrites existing values — old installs are unchanged.
+  The platform key is now also prepared automatically (see **Terminal key** below); if that step is skipped/fails,
+  the fallback is the "authorize" button in Settings → Terminal (`POST /terminal/authorize` in the API) or the manual authorization command shown there.
+- **Terminal key** (`src/lib/terminal-key.ts`, called by `install.ts#authorizeTerminal` right after `.env.dist` is written; `aoox reinstall` does NOT touch it).
+  **Behavior spec — install.sh in aoox-landing must be identical** (order, names, permissions, comments):
+  1. Skip (silently, except for the opt-out) when: `--no-terminal-authorize`; not Linux; not root; `TERMINAL_SSH_PRIVATE_KEY_FILE`/`TERMINAL_SSH_PASSWORD` is set; `TERMINAL_SSH_USER` is empty/not a plain login name (`^[a-z_][\w-]{0,31}$`).
+  2. `<dir>/secrets` is created (`mkdir -p`), `chown 1000:1000` (the `node` user in the api container), `chmod 700`.
+  3. If `<dir>/secrets/terminal_ssh_key` does not exist yet: `ssh-keygen -q -t ed25519 -N "" -C aoox-terminal -f <dir>/secrets/terminal_ssh_key` (OpenSSH format), then the private key `600`, `.pub` `644`, both `chown 1000:1000`. An existing key is not replaced.
+  4. The public key line = the first non-empty line of `terminal_ssh_key.pub`, must be one line `ssh-<tipe> <base64> [comment]`.
+  5. The `TERMINAL_SSH_USER` account from `getent passwd` (fallback `/etc/passwd`): uid, gid, home; home must be absolute, not `/`, without `..`.
+  6. `~/.ssh` (`mkdir -p`, `chmod 700`) and `~/.ssh/authorized_keys` (created if needed, `chmod 600`); the key line is appended only if no line that is **exactly the same** exists (add a newline if the file does not end with one, key on its own line); `chown uid:gid` for `.ssh` and `authorized_keys` (not recursive). Refuses (error) if `.ssh` or `authorized_keys` is a symlink — runs as root, so do not follow a link owned by the user.
+  7. Never fails the installation: any error → warning `terminal key not authorized automatically; use Settings > Terminal > authorize (<alasan>)`; success → `terminal key authorized for <user>` / `already authorized for <user>`.
+  Compatibility was tested for real (node:22-bookworm, genuine OpenSSH ssh-keygen): `ssh2` `utils.parseKey` in the API reads the key produced by `ssh-keygen`, and the API's `publicKeyLine()` derives a line **exactly identical** to `.pub` (the `aoox-terminal` comment included). Pure logic (paths, keygen arguments, permissions, line, idempotency, symlinks) is in `test/lib/terminal-key.test.ts` with a temporary file system (permission/owner cases are skipped on Windows). Not yet tested: a Linux host with a real sshd.
+- `system.ts` (mostly impure — exec/spawn, not unit-tested except the pure `isIpv4`):
+  `isRoot()` (`process.getuid()`, required — writes to `/opt` + manages Docker), `commandExists`/
+  `dockerRunning` (`docker info`), `dockerSocketGid()` (`stat -c %g /var/run/docker.sock` — used for
+  `DOCKER_GID` in compose; a gotcha that used to be documented manually is now automatic), `runShellInherit`
+  (used for `curl -fsSL https://get.docker.com | sh` — **only after confirmation**, unless
+  `--yes`; the Docker installation itself is system-wide, not a silent action).
+- The `run()` flow: platform must be Linux + root → (Docker not yet installed/running? offer to install) → confirm
+  the plan (`--force` to overwrite an existing `--dir`, `--yes` skips all prompts) → copy the
+  bundled compose to `--dir` → `chown 1000:1000 <dir>/secrets` (the EACCES gotcha for the terminal SSH key that was
+  documented in the compose comment — now automatic) → `.env.dist` → `docker compose … up -d`
+  (via the same `dockerInherit` as `aoox deploy`) → poll `GET localhost:3001/auth/setup-status`
+  until the API is really ready (migrations run on boot, "container up" ≠ "ready") → print the URL + `/setup`
+  info (unless `--admin-email` is set, non-interactive).
+- **Verified**: asset path resolution (dist & dev mode, both really exist on disk), env coverage drift test
+  against the bundled compose, precondition gate (not Linux → clear error, `--api-domain`
+  without `--web-domain` → rejected by oclif's own `dependsOn` before this code runs at all; both
+  exit 2 cleanly, not a Windows crash because it happens before any `fetch`). **Not yet tested live**
+  on a real Linux VPS (not available in this session) — `docker compose up -d`, the automatic
+  Docker installation, and polling `/setup-status` rely on `dockerInherit`/`fetch` that have been proven in
+  `aoox deploy`, but the full orchestration path of `install.ts` itself has not yet been tried end-to-end for real.
 
 ## `aoox deploy` (`src/commands/deploy.ts`, `src/lib/{docker,git,image-ref}.ts`)
 
-Build & push berjalan **di laptop**, bukan di server (alasan CLI ini ada) — API-nya hanya menerima
-hasilnya lewat jalur `sourceType: 'image'` yang sudah ada:
-1. `readLink(cwd)` → wajib sudah `aoox link`. `loadCredentials(..., link.url)` — token dari
-   `aoox login` dipakai hanya kalau host-nya sama dengan link (aturan `resolveCredentials`).
-2. `GET /applications/:id` (bukan dari cache link file) untuk `appName`, `project.name`, dan
-   sourceType/imageRegistryId terkini — **beda dari list**: hanya `get-application` yang menyertakan
-   `project` bersarang; `list-applications` tidak (diverifikasi lewat curl).
-3. Pilih registry: `--registry <id>` eksplisit, kalau tidak **default ke registry `self-hosted`**
-   (`RegistryDto.type`) — pilihan default ini yang saya ambil sendiri karena registry lokal memang
-   dibuat untuk ini; registry eksternal/beberapa registry tanpa yang self-hosted → prompt `select`
-   (atau error minta `--registry` tanpa TTY). `GET /registries/:id/credentials` (flow API yang baru,
-   lihat AGENTS.md aoox-api) untuk `docker login`.
-4. Tag = `--tag`, atau `deployTag(cwd)` (`git.ts`): `git rev-parse --short HEAD` + `-dirty` kalau
-   `git status --porcelain` tidak kosong (termasuk file untracked seperti `.aoox.json` yang
-   baru ditulis `aoox link` — **diuji nyata**, itu justru yang membuktikan deteksi dirty jalan), atau
-   timestamp ISO kalau bukan repo git. `sanitizeTag()` (pure, di-unit-test) memastikan hasilnya
-   valid untuk **keduanya**: aturan tag Docker (tanpa `:`) **dan** regex `imageRef` DTO API yang
-   menolak huruf besar di mana pun (bukan cuma di tag) — timestamp ISO (`T`/`Z`) harus di-lowercase.
-5. `imageRefFor()` (`image-ref.ts`, pure, di-unit-test) **mencermin persis** `slugPart()` di
-   `deployment-runner.service.ts` API (`<registry.url>/<slug(project.name)>/<appName>:<tag>`) —
-   supaya image yang dibangun di laptop mendarat di path yang sama seperti kalau API sendiri yang
-   build.
-6. `docker build`/`docker push` via `dockerInherit()` (`docker.ts`, `spawn` dengan `stdio:'inherit'`
-   — output docker sendiri sudah enak dibaca, tidak perlu dibungkus). `docker login` via
-   `dockerLogin()` — password lewat **stdin** (`--password-stdin`), bukan argv (tidak masuk daftar
-   proses/history). Registry tanpa username/password (registry publik) → langkah login dilewati.
-7. `PATCH /applications/:id {sourceType:'image', imageRef, imageRegistryId}` lalu
-   `POST /:id/deploy` — inilah yang membuat API **menarik balik** image yang baru saja di-push CLI
-   (`pullSourceImage()`, otentikasi otomatis dari `imageRegistryId` yang sama) lalu me-replace
-   container-nya; jalur teruji yang sudah ada, tidak ada kode baru di API untuk build khusus CLI.
-8. `follow()` mem-poll `GET /deployments/:id` tiap 1,5 detik, mencetak potongan `logs` yang baru
-   (bukan dari Socket.IO — cukup untuk satu deploy, tanpa dependensi baru), berhenti di
-   `success`/`failed` (exit 1 + `errorMessage` kalau gagal). Rekursi, bukan `for(;;)`, supaya lint
-   `no-await-in-loop` (yang menyasar await tak sengaja berurutan) tidak menyala untuk polling yang
-   memang disengaja berurutan.
-- **Diuji nyata, penuh**: app throwaway `sourceType:image` di project "Smoke Test" (dibuat lewat
-  curl karena `aoox link` v1 tidak bisa membuat aplikasi baru), repo git kecil dengan Dockerfile
-  nginx, `aoox link` → `aoox deploy` tanpa flag apa pun → build (base image ditarik, layer di-cache
-  BuildKit) → `docker login localhost:5000` sukses → push (satu layer "Mounted from" — dedup
-  registry jalan) → API menarik ulang lewat kredensial yang sama → container `Up`, `GET
-  /applications/:id` melaporkan `status:"running"` dan `currentImage` = image yang sama persis yang
-  di-push CLI. `--registry <id salah>` gagal cepat (sebelum docker build apa pun disentuh, exit 2,
-  bukan crash). Semua artefak uji dibersihkan (app dihapus, tag registry dihapus + GC, image lokal
-  dihapus).
+Build & push run **on the laptop**, not on the server (the reason this CLI exists) — the API only receives
+the result through the existing `sourceType: 'image'` path:
+1. `readLink(cwd)` → `aoox link` must already have been run. `loadCredentials(..., link.url)` — the token from
+   `aoox login` is used only if its host matches the link (the `resolveCredentials` rule).
+2. `GET /applications/:id` (not from the link file's cache) for `appName`, `project.name`, and the current
+   sourceType/imageRegistryId — **unlike the list**: only `get-application` includes a nested
+   `project`; `list-applications` does not (verified via curl).
+3. Choose the registry: an explicit `--registry <id>`, otherwise **default to the `self-hosted` registry**
+   (`RegistryDto.type`) — this default is my own choice because the local registry was built for exactly this; external registries / several registries without a self-hosted one → a `select` prompt
+   (or an error asking for `--registry` without a TTY). `GET /registries/:id/credentials` (the newer API flow,
+   see AGENTS.md of aoox-api) for `docker login`.
+4. Tag = `--tag`, or `deployTag(cwd)` (`git.ts`): `git rev-parse --short HEAD` + `-dirty` if
+   `git status --porcelain` is not empty (including untracked files such as `.aoox.json` that was just
+   written by `aoox link` — **tested for real**; that is exactly what proves dirty detection works), or an ISO
+   timestamp if it is not a git repo. `sanitizeTag()` (pure, unit-tested) ensures the result is
+   valid for **both**: the Docker tag rules (no `:`) **and** the API's `imageRef` DTO regex,
+   which rejects uppercase letters anywhere (not just in the tag) — the ISO timestamp (`T`/`Z`) must be lowercased.
+5. `imageRefFor()` (`image-ref.ts`, pure, unit-tested) **mirrors exactly** `slugPart()` in the API's
+   `deployment-runner.service.ts` (`<registry.url>/<slug(project.name)>/<appName>:<tag>`) —
+   so an image built on the laptop lands at the same path as if the API itself had built it.
+6. `docker build`/`docker push` via `dockerInherit()` (`docker.ts`, `spawn` with `stdio:'inherit'`
+   — docker's own output is already readable, no need to wrap it). `docker login` via
+   `dockerLogin()` — the password goes through **stdin** (`--password-stdin`), not argv (so it does not appear in the process list/history). A registry without username/password (public registry) → the login step is skipped.
+7. `PATCH /applications/:id {sourceType:'image', imageRef, imageRegistryId}` then
+   `POST /:id/deploy` — this is what makes the API **pull back** the image the CLI just pushed
+   (`pullSourceImage()`, authenticated automatically from the same `imageRegistryId`) and then replace
+   its container; an existing, already-tested path, with no new code in the API for CLI-specific builds.
+8. `follow()` polls `GET /deployments/:id` every 1.5 seconds, printing the new `logs` chunks
+   (not from Socket.IO — enough for a single deploy, with no new dependency), and stops at
+   `success`/`failed` (exit 1 + `errorMessage` on failure). Recursion, not `for(;;)`, so the lint rule
+   `no-await-in-loop` (which targets accidentally sequential awaits) does not fire for polling that is
+   deliberately sequential.
+- **Tested for real, end to end**: a throwaway `sourceType:image` app in the project "Smoke Test" (created via
+  curl because `aoox link` v1 cannot create new applications), a small git repo with an nginx Dockerfile,
+  `aoox link` → `aoox deploy` with no flags → build (base image pulled, layers cached by
+  BuildKit) → `docker login localhost:5000` succeeded → push (one layer "Mounted from" — registry dedup
+  works) → the API pulls again with the same credentials → container `Up`, `GET
+  /applications/:id` reports `status:"running"` and `currentImage` = the exact image that the
+  CLI pushed. `--registry <wrong id>` fails fast (before any docker build is touched, exit 2,
+  not a crash). All test artifacts were cleaned up (app deleted, registry tag deleted + GC, local image
+  deleted).
 
 ## `aoox link` (`src/lib/link.ts`, `src/commands/link.ts`)
 
-- Menulis `.aoox.json` di **root repo saat ini** (bukan config dir oclif — ini per repo, bukan
-  per mesin): `{url, projectId, projectName, applicationId, applicationName}`. Aman di-commit —
-  isinya cuma id/nama, tanpa token — supaya semua kontributor repo otomatis terhubung ke aplikasi
-  yang sama tanpa harus link manual masing-masing.
-  `readLink()`/`writeLink()`/`linkPath()` sejajar `config.ts` (Node fs polos, tanpa dependensi baru).
-  `url` ikut disimpan (bukan hanya id) supaya nanti `aoox deploy`/`aoox logs` bisa lewat
-  `resolveCredentials()` yang sama seperti flag `--url` — token yang tersimpan tidak terkirim ke
-  panel lain dari yang link ini dibuat untuknya.
-- **v1 hanya memilih dari aplikasi yang sudah ada** (`GET /applications?projectId=`) — tidak bisa
-  membuat aplikasi baru dari CLI (itu perlu banyak field: sumber git/image, port, dll., di luar
-  cakupan "link"). Project/aplikasi kosong → pesan error menyuruh buat dulu di panel.
-- `--project <id>`/`--app <id>` melewati pemilihan interaktif (`@inquirer/prompts` `select()`) —
-  dipakai CI/scripting; tanpa TTY dan tanpa flag → error yang jelas, bukan macet menunggu input.
+- Writes `.aoox.json` at the **current repo root** (not the oclif config dir — this is per repo, not
+  per machine): `{url, projectId, projectName, applicationId, applicationName}`. Safe to commit —
+  it contains only ids/names, no token — so every contributor to the repo is automatically connected to the
+  same application without having to link manually each time.
+  `readLink()`/`writeLink()`/`linkPath()` mirror `config.ts` (plain Node fs, no new dependencies).
+  `url` is stored too (not just the id) so that later `aoox deploy`/`aoox logs` can go through the same
+  `resolveCredentials()` as the `--url` flag — a stored token is not sent to a panel other than the one this link was created for.
+- **v1 only selects from existing applications** (`GET /applications?projectId=`) — it cannot
+  create a new application from the CLI (that needs many fields: git/image source, ports, etc., outside the
+  scope of "link"). An empty project/application → the error message tells you to create one in the panel first.
+- `--project <id>`/`--app <id>` skip interactive selection (`@inquirer/prompts` `select()`) —
+  used for CI/scripting; without a TTY and without flags → a clear error, not hanging while waiting for input.
 
 ## CI
 
-`.github/workflows/npm-publish.yml`: tiap `git push --follow-tags` bikin tag `v*` yang memicu
-build + `npm test` + `npm publish`, dist-tag npm diturunkan dari label pre-release versi
-(`0.1.0-alpha.1` → `alpha`, `1.0.0` tanpa label → `latest`) — lihat `RELEASING.md`. Autentikasi
-lewat **npm Trusted Publishing (OIDC)** — `permissions.id-token: write` di workflow, tanpa token
-tersimpan sama sekali (npm token granular dengan akses publish langsung sedang di-deprecate per
-Jan 2027). Trusted publisher baru bisa didaftarkan di npmjs.com **setelah** package `aoox` ada,
-jadi publish pertama tetap manual dari mesin dev (2FA normal) — urutan lengkap ada di
-`RELEASING.md`. `npm publish` memicu hook `prepack` = `oclif manifest && oclif readme`, jadi **README
-diregenerasi otomatis** dari daftar perintah — jangan menyunting bagian di antara penanda
-`<!-- commands -->` manual. Belum ada CI untuk PR/push biasa (cuma jalan saat tag rilis) —
-`npm run lint`/`npm run build`/`npm test` masih perlu dijalankan manual sebelum merge.
-`scripts.lint` memakai `--max-warnings=0` supaya warning ikut menggagalkan pipeline, bukan cuma
-error.
+`.github/workflows/npm-publish.yml`: every `git push --follow-tags` creates a `v*` tag that triggers
+build + `npm test` + `npm publish`; the npm dist-tag is derived from the version's pre-release label
+(`0.1.0-alpha.1` → `alpha`, `1.0.0` without a label → `latest`) — see `RELEASING.md`. Authentication
+goes through **npm Trusted Publishing (OIDC)** — `permissions.id-token: write` in the workflow, with no token
+stored at all (granular npm tokens with direct publish access are being deprecated as of
+Jan 2027). A new trusted publisher can only be registered on npmjs.com **after** the `aoox` package exists,
+so the first publish stays manual from a dev machine (normal 2FA) — the full sequence is in
+`RELEASING.md`. `npm publish` triggers the `prepack` hook = `oclif manifest && oclif readme`, so **the README
+is regenerated automatically** from the command list — do not edit the part between the
+`<!-- commands -->` markers manually. There is still no CI for ordinary PRs/pushes (it only runs when a release tag is pushed) —
+`npm run lint`/`npm run build`/`npm test` still need to be run manually before merging.
+`scripts.lint` uses `--max-warnings=0` so that warnings also fail the pipeline, not just
+errors.
 
-## Instalasi CLI sendiri (sementara: manual dari sumber)
+## Installing the CLI yourself (temporary: manual from source)
 
-Belum ada `npm i -g aoox` (belum publish ke registry mana pun — keputusan disengaja, lihat di
-atas). README (bagian antara `<!-- usagestop -->` dan `# Commands`, **tidak** tersentuh `oclif
-readme`) mendokumentasikan cara manual: `git clone` (repo private, perlu kredensial GitLab) →
-`npm install && npm run build && npm link`. Konsekuensi untuk `aoox install`: VPS tujuan perlu Node
-≥22 **dan** clone+build+link ini dulu, baru `sudo aoox install` — belum ada skrip bootstrap satu
-baris (`curl | sh`) yang merangkai instal Node + ambil CLI + `aoox install`; ditunda sampai kanal
-distribusi diputuskan (otomatisasi git-clone pakai token juga diajukan & ditunda user, bukan
-prioritas sekarang). Kalau nanti README diregenerasi (`npx oclif readme`, atau otomatis lewat
-`prepack` saat `npm pack`/tag), bagian manual-install ini **selamat** karena berada di luar ketiga
-pasangan penanda (`toc`/`usage`/`commands`) — sudah diverifikasi lewat regenerasi nyata.
+There is no `npm i -g aoox` yet (not published to any registry — a deliberate decision, see
+above). The README (the part between `<!-- usagestop -->` and `# Commands`, **not** touched by `oclif
+readme`) documents the manual method: `git clone` (private repo, needs GitLab credentials) →
+`npm install && npm run build && npm link`. Consequence for `aoox install`: the target VPS needs Node
+≥22 **and** this clone+build+link first, then `sudo aoox install` — there is no one-line bootstrap script yet
+(`curl | sh`) that chains installing Node + fetching the CLI + `aoox install`; it is postponed until the
+distribution channel is decided (automating the git clone with a token was also proposed & postponed by the user, not a
+current priority). If the README is regenerated later (`npx oclif readme`, or automatically via
+`prepack` on `npm pack`/tag), this manual-install section **survives**, because it sits outside the three
+marker pairs (`toc`/`usage`/`commands`) — already verified through a real regeneration.

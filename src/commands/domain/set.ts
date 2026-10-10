@@ -18,7 +18,7 @@ interface UpdatePanelDomainResult {
 
 /**
  * Post-install alternative to hand-editing docker-compose.domain.yml/.env.dist
- * over SSH (see RELEASING.md-adjacent AGENTS.md "Domain untuk panel sendiri"):
+ * over SSH (see the aoox-api AGENTS.md "Domains for the panel itself"):
  * calls the panel's own `PATCH /instance/domain`, which recreates its web/api
  * containers. Requires INSTALL_DIR to already be set in the panel's .env.dist.
  */
