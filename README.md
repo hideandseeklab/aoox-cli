@@ -3,7 +3,7 @@ aoox
 
 CLI for [aoox](https://github.com/hideandseeklab/aoox-api), a self-hosted PaaS — build and deploy
 
-Website: [aoox.dev](https://aoox.dev) · Docs: [aoox.dev/docs](https://aoox.dev/docs) · Changelog: [aoox.dev/changelog](https://aoox.dev/changelog)
+Website: [aoox.dev](https://aoox.dev/en) · Docs: [aoox.dev/en/docs](https://aoox.dev/en/docs) · Changelog: [aoox.dev/en/changelog](https://aoox.dev/en/changelog)
 
 Related repos: [aoox-api](https://github.com/hideandseeklab/aoox-api) (backend) ·
 [aoox-web](https://github.com/hideandseeklab/aoox-web) (dashboard) ·
@@ -108,7 +108,7 @@ npm link            # or: npm install -g .
 
 ## `aoox deploy`
 
-Build image lokal, push ke registry aoox, lalu deploy (repo harus di-`aoox link` dulu)
+Build a local image, push it to the aoox registry, then deploy (the repo must be linked with `aoox link` first)
 
 ```
 USAGE
@@ -116,15 +116,15 @@ USAGE
     <value>]
 
 FLAGS
-  -f, --dockerfile=<value>  [default: Dockerfile] Path ke Dockerfile
-  -t, --token=<value>       [env: AOOX_TOKEN] API token (aoox_…); default dari hasil `aoox login`
-  -u, --url=<value>         [env: AOOX_URL] URL panel aoox; default dari hasil `aoox login`
+  -f, --dockerfile=<value>  [default: Dockerfile] Path to the Dockerfile
+  -t, --token=<value>       [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>         [env: AOOX_URL] aoox panel URL; defaults to the value from `aoox login`
       --context=<value>     [default: .] Docker build context
-      --registry=<value>    ID registry tujuan push; default registry self-hosted
-      --tag=<value>         Tag image; default git short SHA (+ -dirty)
+      --registry=<value>    Registry ID to push to; defaults to the self-hosted registry
+      --tag=<value>         Image tag; defaults to the git short SHA (+ -dirty)
 
 DESCRIPTION
-  Build image lokal, push ke registry aoox, lalu deploy (repo harus di-`aoox link` dulu)
+  Build a local image, push it to the aoox registry, then deploy (the repo must be linked with `aoox link` first)
 
 EXAMPLES
   $ aoox deploy
@@ -136,21 +136,21 @@ _See code: [src/commands/deploy.ts](https://github.com/hideandseeklab/aoox-cli/b
 
 ## `aoox domain set`
 
-Set domain kustom untuk panel itu sendiri (bukan aplikasi) lewat API panel yang sudah jalan
+Set a custom domain for the panel itself (not an application) through the running panel API
 
 ```
 USAGE
   $ aoox domain set --api <value> --web <value> [-t <value>] [-u <value>] [--acme-email <value>]
 
 FLAGS
-  -t, --token=<value>       [env: AOOX_TOKEN] API token (aoox_…); default dari hasil `aoox login`
-  -u, --url=<value>         [env: AOOX_URL] URL panel aoox; default dari hasil `aoox login`
-      --acme-email=<value>  Email untuk sertifikat Let's Encrypt
-      --api=<value>         (required) Domain untuk API panel
-      --web=<value>         (required) Domain untuk dashboard panel
+  -t, --token=<value>       [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>         [env: AOOX_URL] aoox panel URL; defaults to the value from `aoox login`
+      --acme-email=<value>  Email for the Let's Encrypt certificate
+      --api=<value>         (required) Domain for the panel API
+      --web=<value>         (required) Domain for the panel dashboard
 
 DESCRIPTION
-  Set domain kustom untuk panel itu sendiri (bukan aplikasi) lewat API panel yang sudah jalan
+  Set a custom domain for the panel itself (not an application) through the running panel API
 
 EXAMPLES
   $ aoox domain set --web panel.example.com --api api.example.com
@@ -182,30 +182,31 @@ _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/6.3.0/
 
 ## `aoox install`
 
-Pasang aoox (postgres + api + web) di VPS baru lewat Docker Compose
+Install aoox (postgres + api + web) on a fresh VPS with Docker Compose
 
 ```
 USAGE
   $ aoox install [--acme-email <value>] [--admin-name <value> --admin-email <value>] [--admin-password
-    <value> ] [--api-domain <value> --web-domain <value>] [--dir <value>] [--force] [--no-terminal-authorize] [--terminal-ssh-user <value>] [-y]
+    <value> ] [--api-domain <value> --web-domain <value>] [--dir <value>] [--force] [--no-terminal-authorize]
+    [--terminal-ssh-user <value>] [-y]
 
 FLAGS
-  -y, --yes                        Jangan tanya konfirmasi apa pun
-      --acme-email=<value>         Wajib bersama --web-domain/--api-domain (Let’s Encrypt)
-      --admin-email=<value>        Buat owner pertama tanpa lewat /setup di browser
-      --admin-name=<value>         Nama owner pertama
-      --admin-password=<value>     Password owner pertama (min. 8 karakter)
-      --api-domain=<value>         Domain untuk API, lewat proxy bawaan
-      --dir=<value>                [default: /opt/aoox] Folder instalasi
-      --force                      Timpa instalasi yang sudah ada di --dir
-      --no-terminal-authorize      Jangan buat/otorisasi key SSH Terminal web otomatis (lakukan lewat Settings >
-                                   Terminal)
-      --terminal-ssh-user=<value>  User SSH untuk fitur Terminal web masuk ke host ini (default: user yang menjalankan
-                                   sudo, atau root bila tidak ada)
-      --web-domain=<value>         Domain untuk panel web, lewat proxy bawaan
+  -y, --yes                        Do not ask for any confirmation
+      --acme-email=<value>         Required with --web-domain/--api-domain (Let’s Encrypt)
+      --admin-email=<value>        Create the first owner without going through /setup in the browser
+      --admin-name=<value>         Name of the first owner
+      --admin-password=<value>     Password of the first owner (min. 8 characters)
+      --api-domain=<value>         Domain for the API, served through the bundled proxy
+      --dir=<value>                [default: /opt/aoox] Installation directory
+      --force                      Overwrite an existing installation in --dir
+      --no-terminal-authorize      Do not create/authorize the web Terminal SSH key automatically (do it in Settings >
+                                   Terminal instead)
+      --terminal-ssh-user=<value>  SSH user the web Terminal uses to log in to this host (default: the user running
+                                   sudo, or root if there is none)
+      --web-domain=<value>         Domain for the web panel, served through the bundled proxy
 
 DESCRIPTION
-  Pasang aoox (postgres + api + web) di VPS baru lewat Docker Compose
+  Install aoox (postgres + api + web) on a fresh VPS with Docker Compose
 
 EXAMPLES
   sudo aoox install
@@ -217,20 +218,20 @@ _See code: [src/commands/install.ts](https://github.com/hideandseeklab/aoox-cli/
 
 ## `aoox link`
 
-Hubungkan folder ini ke sebuah aplikasi di panel (dipakai `aoox deploy`/`aoox logs`)
+Link this folder to an application in the panel (used by `aoox deploy`/`aoox logs`)
 
 ```
 USAGE
   $ aoox link [-t <value>] [-u <value>] [--app <value>] [--project <value>]
 
 FLAGS
-  -t, --token=<value>    [env: AOOX_TOKEN] API token (aoox_…); default dari hasil `aoox login`
-  -u, --url=<value>      [env: AOOX_URL] URL panel aoox; default dari hasil `aoox login`
-      --app=<value>      ID aplikasi; lewati pemilihan interaktif
-      --project=<value>  ID project; lewati pemilihan interaktif
+  -t, --token=<value>    [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>      [env: AOOX_URL] aoox panel URL; defaults to the value from `aoox login`
+      --app=<value>      Application ID; skip the interactive selection
+      --project=<value>  Project ID; skip the interactive selection
 
 DESCRIPTION
-  Hubungkan folder ini ke sebuah aplikasi di panel (dipakai `aoox deploy`/`aoox logs`)
+  Link this folder to an application in the panel (used by `aoox deploy`/`aoox logs`)
 
 EXAMPLES
   $ aoox link
@@ -242,18 +243,18 @@ _See code: [src/commands/link.ts](https://github.com/hideandseeklab/aoox-cli/blo
 
 ## `aoox login`
 
-Simpan URL panel dan API token untuk perintah lain
+Save the panel URL and API token for other commands
 
 ```
 USAGE
   $ aoox login [-t <value>] [-u <value>]
 
 FLAGS
-  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); default dari hasil `aoox login`
-  -u, --url=<value>    [env: AOOX_URL] URL panel aoox; default dari hasil `aoox login`
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] aoox panel URL; defaults to the value from `aoox login`
 
 DESCRIPTION
-  Simpan URL panel dan API token untuk perintah lain
+  Save the panel URL and API token for other commands
 
 EXAMPLES
   $ aoox login
@@ -555,20 +556,20 @@ _See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/
 
 ## `aoox registry domain`
 
-Set atau hapus domain kustom untuk registry self-hosted
+Set or remove the custom domain for the self-hosted registry
 
 ```
 USAGE
   $ aoox registry domain [-t <value>] [-u <value>] [--clear] [--set <value>]
 
 FLAGS
-  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); default dari hasil `aoox login`
-  -u, --url=<value>    [env: AOOX_URL] URL panel aoox; default dari hasil `aoox login`
-      --clear          Hapus domain, kembali ke host:port
-      --set=<value>    Domain untuk registry self-hosted
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] aoox panel URL; defaults to the value from `aoox login`
+      --clear          Remove the domain, falling back to host:port
+      --set=<value>    Domain for the self-hosted registry
 
 DESCRIPTION
-  Set atau hapus domain kustom untuk registry self-hosted
+  Set or remove the custom domain for the self-hosted registry
 
 EXAMPLES
   $ aoox registry domain --set registry.example.com
@@ -580,23 +581,23 @@ _See code: [src/commands/registry/domain.ts](https://github.com/hideandseeklab/a
 
 ## `aoox reinstall`
 
-Perbaiki/segarkan instalasi aoox yang sudah ada tanpa kehilangan data: tulis ulang compose, gabungkan .env.dist (secret tidak pernah dibuat ulang), lalu pull + recreate
+Repair/refresh an existing aoox installation without losing data: rewrite compose, merge .env.dist (secrets are never regenerated), then pull + recreate
 
 ```
 USAGE
   $ aoox reinstall [--dir <value>] [--dry-run] [--no-pull] [--terminal-ssh-user <value>] [-y]
 
 FLAGS
-  -y, --yes                        Jangan tanya konfirmasi
-      --dir=<value>                [default: /opt/aoox] Folder instalasi
-      --dry-run                    Cetak rencana (file yang berubah, key yang ditambah, perintah compose) tanpa mengubah
-                                   apa pun
-      --no-pull                    Lewati docker compose pull (pakai image yang sudah ada)
-      --terminal-ssh-user=<value>  Isi/timpa TERMINAL_SSH_USER di .env.dist saat repair
+  -y, --yes                        Do not ask for confirmation
+      --dir=<value>                [default: /opt/aoox] Installation directory
+      --dry-run                    Print the plan (changed files, keys to add, compose commands) without changing
+                                   anything
+      --no-pull                    Skip docker compose pull (use the images already present)
+      --terminal-ssh-user=<value>  Set/overwrite TERMINAL_SSH_USER in .env.dist during repair
 
 DESCRIPTION
-  Perbaiki/segarkan instalasi aoox yang sudah ada tanpa kehilangan data: tulis ulang compose, gabungkan .env.dist
-  (secret tidak pernah dibuat ulang), lalu pull + recreate
+  Repair/refresh an existing aoox installation without losing data: rewrite compose, merge .env.dist (secrets are never
+  regenerated), then pull + recreate
 
 EXAMPLES
   sudo aoox reinstall --dry-run
@@ -610,19 +611,19 @@ _See code: [src/commands/reinstall.ts](https://github.com/hideandseeklab/aoox-cl
 
 ## `aoox update`
 
-Cek atau terapkan update untuk panel aoox itu sendiri
+Check for or apply updates to the aoox panel itself
 
 ```
 USAGE
   $ aoox update [-t <value>] [-u <value>] [--apply]
 
 FLAGS
-  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); default dari hasil `aoox login`
-  -u, --url=<value>    [env: AOOX_URL] URL panel aoox; default dari hasil `aoox login`
-      --apply          Terapkan update jika tersedia (pull + restart)
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] aoox panel URL; defaults to the value from `aoox login`
+      --apply          Apply the update if one is available (pull + restart)
 
 DESCRIPTION
-  Cek atau terapkan update untuk panel aoox itu sendiri
+  Check for or apply updates to the aoox panel itself
 
 EXAMPLES
   $ aoox update
@@ -634,21 +635,21 @@ _See code: [src/commands/update.ts](https://github.com/hideandseeklab/aoox-cli/b
 
 ## `aoox whoami`
 
-Tampilkan akun dan panel yang sedang dipakai
+Show the account and panel in use
 
 ```
 USAGE
   $ aoox whoami [--json] [-t <value>] [-u <value>]
 
 FLAGS
-  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); default dari hasil `aoox login`
-  -u, --url=<value>    [env: AOOX_URL] URL panel aoox; default dari hasil `aoox login`
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] aoox panel URL; defaults to the value from `aoox login`
 
 GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  Tampilkan akun dan panel yang sedang dipakai
+  Show the account and panel in use
 
 EXAMPLES
   $ aoox whoami

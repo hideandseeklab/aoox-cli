@@ -35,18 +35,18 @@ async function readIfExists(path: string): Promise<string | undefined> {
 
 export default class Reinstall extends Command {
   static description =
-    'Perbaiki/segarkan instalasi aoox yang sudah ada tanpa kehilangan data: tulis ulang compose, gabungkan .env.dist (secret tidak pernah dibuat ulang), lalu pull + recreate'
+    'Repair/refresh an existing aoox installation without losing data: rewrite compose, merge .env.dist (secrets are never regenerated), then pull + recreate'
   static examples = [
     'sudo <%= config.bin %> <%= command.id %> --dry-run',
     'sudo <%= config.bin %> <%= command.id %>',
     'sudo <%= config.bin %> <%= command.id %> --yes --terminal-ssh-user root',
   ]
   static flags = {
-    dir: Flags.string({default: '/opt/aoox', description: 'Folder instalasi'}),
-    'dry-run': Flags.boolean({default: false, description: 'Cetak rencana (file yang berubah, key yang ditambah, perintah compose) tanpa mengubah apa pun'}),
-    'no-pull': Flags.boolean({default: false, description: 'Lewati docker compose pull (pakai image yang sudah ada)'}),
-    'terminal-ssh-user': Flags.string({description: 'Isi/timpa TERMINAL_SSH_USER di .env.dist saat repair'}),
-    yes: Flags.boolean({char: 'y', default: false, description: 'Jangan tanya konfirmasi'}),
+    dir: Flags.string({default: '/opt/aoox', description: 'Installation directory'}),
+    'dry-run': Flags.boolean({default: false, description: 'Print the plan (changed files, keys to add, compose commands) without changing anything'}),
+    'no-pull': Flags.boolean({default: false, description: 'Skip docker compose pull (use the images already present)'}),
+    'terminal-ssh-user': Flags.string({description: 'Set/overwrite TERMINAL_SSH_USER in .env.dist during repair'}),
+    yes: Flags.boolean({char: 'y', default: false, description: 'Do not ask for confirmation'}),
   }
 
   // eslint-disable-next-line complexity -- linear orchestration: plan, confirm, backup, apply, report
@@ -60,8 +60,8 @@ export default class Reinstall extends Command {
     const currentEnv = await readIfExists(envPath)
     const currentCompose = await readIfExists(`${dir}/${DIST_FILE}`)
     if (currentEnv === undefined || currentCompose === undefined) {
-      this.error(`Tidak ada instalasi aoox di ${dir} (${DIST_FILE} dan .env.dist harus ada).`, {
-        suggestions: ['Untuk instalasi baru: `sudo aoox install`. Folder lain: --dir <folder>.'],
+      this.error(`No aoox installation found in ${dir} (${DIST_FILE} and .env.dist must exist).`, {
+        suggestions: ['For a new installation: `sudo aoox install`. For another folder: --dir <folder>.'],
       })
     }
 
@@ -107,7 +107,7 @@ export default class Reinstall extends Command {
     })
 
     if (flags['dry-run']) {
-      this.log('\n(dry-run) Tidak ada yang diubah.')
+      this.log('\n(dry-run) Nothing was changed.')
       return
     }
 
@@ -116,7 +116,7 @@ export default class Reinstall extends Command {
     if (!flags.yes) {
       const ok = await confirm({
         default: true,
-        message: `Terapkan di ${dir} (data & secret tidak disentuh) lalu recreate container?`,
+        message: `Apply in ${dir} (data and secrets are left untouched) and then recreate the containers?`,
       })
       if (!ok) this.exit(0)
     }
@@ -139,9 +139,9 @@ export default class Reinstall extends Command {
     await dockerInherit(up, dir)
 
     const env = parseEnv(merge.content)
-    this.log('==> Menunggu API siap')
+    this.log('==> Waiting for the API to be ready')
     const ready = await waitForApi(env.get('API_PORT') || '3001', READY_TIMEOUT_MS)
-    if (!ready) this.warn(`API belum menjawab dalam waktu yang diharapkan — cek \`docker compose ${files.map((f) => `-f ${f}`).join(' ')} logs api\` di ${dir}.`)
+    if (!ready) this.warn(`The API did not respond in the expected time — check \`docker compose ${files.map((f) => `-f ${f}`).join(' ')} logs api\` in ${dir}.`)
 
     const version = await dockerCapture(
       [...composeArgs(files, 'exec', '-T', 'api', 'node', '-p', "require('./package.json').version")],
@@ -149,22 +149,22 @@ export default class Reinstall extends Command {
     )
 
     this.log('')
-    this.log(`Selesai. aoox di ${dir} disegarkan${version ? ` (versi ${version})` : ''}.`)
-    this.log(`  Key .env.dist ditambahkan: ${merge.added.length > 0 ? merge.added.join(', ') : '(tidak ada)'}`)
-    this.log(`  Backup file lama: ${backupDir ?? '(tidak ada perubahan file, tidak perlu backup)'}`)
-    this.log(`  Buka: ${env.get('WEB_ORIGIN') || 'http://localhost:3000'}`)
+    this.log(`Done. aoox in ${dir} has been refreshed${version ? ` (version ${version})` : ''}.`)
+    this.log(`  .env.dist keys added: ${merge.added.length > 0 ? merge.added.join(', ') : '(none)'}`)
+    this.log(`  Backup of previous files: ${backupDir ?? '(no file changes, no backup needed)'}`)
+    this.log(`  Open: ${env.get('WEB_ORIGIN') || 'http://localhost:3000'}`)
   }
 
   private assertPreconditions(): void {
     if (process.platform !== 'linux') {
-      this.error('aoox reinstall hanya untuk VPS Linux (dijalankan langsung di server tujuan).')
+      this.error('aoox reinstall only runs on a Linux VPS (run it directly on the target server).')
     }
 
     if (!isRoot()) {
-      this.error('Perlu root — perintah ini membaca .env.dist (izin 600) dan mengelola Docker.', {
+      this.error('Root is required — this command reads .env.dist (mode 600) and manages Docker.', {
         suggestions: [
           'sudo aoox reinstall …',
-          'Kalau `sudo: aoox: command not found` (terpasang di ~/.local/bin): sudo "$(command -v aoox)" reinstall …',
+          'If `sudo: aoox: command not found` (installed in ~/.local/bin): sudo "$(command -v aoox)" reinstall …',
         ],
       })
     }
@@ -187,13 +187,13 @@ export default class Reinstall extends Command {
       if (name === '.env.dist') await chmod(`${backupDir}/${name}`, 0o600)
     }
 
-    this.log(`==> Backup file lama ke ${backupDir}`)
+    this.log(`==> Backing up previous files to ${backupDir}`)
   }
 
   private async ensureDocker(): Promise<void> {
     if (!commandExists('docker') || !dockerRunning()) {
-      this.error('Docker tidak ditemukan atau tidak berjalan (atau tidak ada akses ke socket-nya).', {
-        suggestions: ['Jalankan dengan sudo, dan pastikan `systemctl status docker` aktif.'],
+      this.error('Docker was not found or is not running (or there is no access to its socket).', {
+        suggestions: ['Run with sudo, and make sure `systemctl status docker` is active.'],
       })
     }
   }
@@ -223,33 +223,33 @@ export default class Reinstall extends Command {
     running?: string
     up: string[]
   }): void {
-    this.log(`Instalasi: ${p.dir}`)
+    this.log(`Installation: ${p.dir}`)
     const show = (name: string, diff?: ReturnType<typeof summarizeDiff>) => {
       if (!diff) {
-        this.log(`\n${name}: tidak berubah`)
+        this.log(`\n${name}: unchanged`)
         return
       }
 
-      this.log(`\n${name}: ditulis ulang dari salinan yang dibundel (+${diff.added} −${diff.removed} baris)`)
+      this.log(`\n${name}: rewritten from the bundled copy (+${diff.added} −${diff.removed} lines)`)
       for (const l of diff.lines) this.log(`  ${l}`)
     }
 
     show(DIST_FILE, p.composeDiff)
     if (p.files.includes(DOMAIN_FILE)) show(DOMAIN_FILE, p.domainDiff)
 
-    this.log(`\n.env.dist: ${p.merge.added.length + p.merge.overridden.length > 0 ? 'digabung (secret & nilai lama dipertahankan)' : 'tidak berubah'}`)
-    for (const k of p.merge.added) this.log(`  + ${k} (ditambahkan)`)
-    for (const k of p.merge.overridden) this.log(`  ~ ${k} (diganti sesuai flag)`)
+    this.log(`\n.env.dist: ${p.merge.added.length + p.merge.overridden.length > 0 ? 'merged (secrets and existing values kept)' : 'unchanged'}`)
+    for (const k of p.merge.added) this.log(`  + ${k} (added)`)
+    for (const k of p.merge.overridden) this.log(`  ~ ${k} (replaced per flag)`)
     for (const w of p.merge.warnings) this.warn(w)
 
-    this.log(`\n${OVERRIDE_FILE}: tidak disentuh`)
-    this.log(`File compose: ${p.files.join(' + ')}${p.running ? ' (sama seperti stack yang berjalan)' : ' (container api tidak ditemukan — pakai aturan bawaan)'}`)
+    this.log(`\n${OVERRIDE_FILE}: left untouched`)
+    this.log(`Compose files: ${p.files.join(' + ')}${p.running ? ' (same as the running stack)' : ' (api container not found — using default rules)'}`)
     const dropped = runningFileNames(p.running).filter((n) => !p.files.includes(n))
-    if (dropped.length > 0) this.warn(`File compose dari stack berjalan tidak ditemukan lagi di folder dan dilewati: ${dropped.join(', ')}`)
-    this.log('Perintah:')
+    if (dropped.length > 0) this.warn(`Compose files from the running stack are no longer in the folder and were skipped: ${dropped.join(', ')}`)
+    this.log('Commands:')
     if (p.pull) this.log(`  docker ${p.pull.join(' ')}`)
     this.log(`  docker ${p.up.join(' ')}`)
-    this.log('Volume tidak disentuh.')
+    this.log('Volumes left untouched.')
   }
 
   /**

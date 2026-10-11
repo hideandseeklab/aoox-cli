@@ -10,7 +10,7 @@ import {connectionFlags} from '../lib/flags.js'
 const DEFAULT_URL = 'http://localhost:3001'
 
 export default class Login extends Command {
-  static description = 'Simpan URL panel dan API token untuk perintah lain'
+  static description = 'Save the panel URL and API token for other commands'
   static examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --url https://panel.example.com --token aoox_xxx',
@@ -23,13 +23,13 @@ export default class Login extends Command {
 
     // Prompting needs a terminal; in CI the flags (or AOOX_*) must carry it.
     if ((!flags.url || !flags.token) && !process.stdin.isTTY) {
-      this.error('Tidak ada terminal interaktif.', {
-        suggestions: ['Beri --url dan --token, atau set AOOX_URL dan AOOX_TOKEN.'],
+      this.error('No interactive terminal.', {
+        suggestions: ['Pass --url and --token, or set AOOX_URL and AOOX_TOKEN.'],
       })
     }
 
     const url = normalizeUrl(
-      flags.url ?? (await input({default: existing?.url ?? DEFAULT_URL, message: 'URL panel'})),
+      flags.url ?? (await input({default: existing?.url ?? DEFAULT_URL, message: 'Panel URL'})),
     )
     // Prompted rather than taken as an argument by default: a token on the
     // command line ends up in shell history and in the process list.
@@ -38,24 +38,24 @@ export default class Login extends Command {
     const user = await this.verify({token, url})
     const path = await writeConfig(this.config.configDir, {token, url})
 
-    this.log(`Masuk sebagai ${user.email} (${user.role}) di ${url}`)
-    this.log(`Token disimpan di ${path}`)
+    this.log(`Logged in as ${user.email} (${user.role}) at ${url}`)
+    this.log(`Token saved to ${path}`)
   }
 
   /** Never store a credential that does not work — check it first. */
   private async verify(config: {token: string; url: string}): Promise<AuthUser> {
-    ux.action.start('Memverifikasi token')
+    ux.action.start('Verifying token')
     try {
       const user = await api<AuthUser>(config, '/auth/me')
       ux.action.stop('ok')
       return user
     } catch (error) {
-      ux.action.stop('gagal')
+      ux.action.stop('failed')
       if (error instanceof ApiError && error.status === 401) {
-        this.error('Token ditolak panel.', {
+        this.error('The panel rejected the token.', {
           suggestions: [
-            'Pastikan token belum kedaluwarsa atau dihapus.',
-            'Buat token baru di panel: Settings → Akun → API token.',
+            'Make sure the token has not expired or been deleted.',
+            'Create a new token in the panel: Settings → Account → API token.',
           ],
         })
       }

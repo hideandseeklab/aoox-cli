@@ -13,8 +13,8 @@ build the image locally, push it to the aoox registry, then trigger a deploy thr
 - `npm run build` — `tsc -b` to `dist/`
 - `npm test` — mocha (`posttest` automatically runs `npm run lint`)
 - `npm run lint` — eslint (`eslint-config-oclif`)
-- `./bin/dev.js <perintah>` — run from TypeScript without a build (ts-node/esm)
-- `./bin/run.js <perintah>` — run the built output in `dist/`
+- `./bin/dev.js <command>` — run from TypeScript without a build (ts-node/esm)
+- `./bin/run.js <command>` — run the built output in `dist/`
 
 ## Git
 
@@ -22,7 +22,7 @@ build the image locally, push it to the aoox registry, then trigger a deploy thr
 
 ## Structure
 
-- `src/commands/<nama>.ts` — one file = one command (`export default class extends Command`).
+- `src/commands/<name>.ts` — one file = one command (`export default class extends Command`).
   The file name determines the command name; subfolders become topics. Do not register manually anywhere:
   `oclif.commands` in `package.json` points to `./dist/commands`.
 - `src/lib/` — everything that is not a command (config, API client, types, shared flags).

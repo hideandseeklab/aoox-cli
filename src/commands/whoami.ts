@@ -11,7 +11,7 @@ export interface WhoamiResult extends AuthUser {
 }
 
 export default class Whoami extends Command {
-  static description = 'Tampilkan akun dan panel yang sedang dipakai'
+  static description = 'Show the account and panel in use'
   static enableJsonFlag = true
   static examples = ['<%= config.bin %> <%= command.id %>', '<%= config.bin %> <%= command.id %> --json']
   static flags = {...connectionFlags}
@@ -24,7 +24,7 @@ export default class Whoami extends Command {
       config = await loadCredentials(this.config.configDir, flags)
     } catch (error) {
       if (error instanceof MissingCredentialsError) {
-        this.error(error.message, {suggestions: ['Jalankan `aoox login`.']})
+        this.error(error.message, {suggestions: ['Run `aoox login`.']})
       }
 
       throw error
@@ -35,7 +35,7 @@ export default class Whoami extends Command {
       user = await api<AuthUser>(config, '/auth/me')
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
-        this.error('Token tidak berlaku lagi.', {suggestions: ['Jalankan `aoox login` untuk menyimpan token baru.']})
+        this.error('The token is no longer valid.', {suggestions: ['Run `aoox login` to save a new token.']})
       }
 
       throw error

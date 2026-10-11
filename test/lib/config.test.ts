@@ -31,7 +31,7 @@ describe('config lib', () => {
     it('refuses to send the stored token to a different panel', () => {
       expect(() => resolveCredentials({file, url: 'https://evil.test'})).to.throw(
         MissingCredentialsError,
-        /Tidak ada token untuk https:\/\/evil.test/,
+        /No token for https:\/\/evil.test/,
       )
     })
 
@@ -43,7 +43,7 @@ describe('config lib', () => {
     })
 
     it('asks for login when there is nothing at all', () => {
-      expect(() => resolveCredentials({file: null})).to.throw(MissingCredentialsError, /URL panel/)
+      expect(() => resolveCredentials({file: null})).to.throw(MissingCredentialsError, /panel URL/)
       expect(() => resolveCredentials({file: null, url: 'https://panel.test'})).to.throw(
         MissingCredentialsError,
         /API token/,

@@ -39,7 +39,7 @@ export function runShellInherit(script: string): Promise<void> {
     child.on('error', reject)
     child.on('close', (code) => {
       if (code === 0) resolve()
-      else reject(new Error(`Perintah keluar dengan kode ${code}: ${script}`))
+      else reject(new Error(`Command exited with code ${code}: ${script}`))
     })
   })
 }

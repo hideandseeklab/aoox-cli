@@ -23,6 +23,7 @@ Versions below 1.0.0 may include breaking changes in a minor release.
   as root, so the web terminal failed with "SSH authentication failed for root@host.docker.internal" right after
   installing. `--terminal-ssh-user` still wins, and existing installs (`aoox reinstall`, `.env.dist` merge) keep
   their current value.
+- CLI messages, command descriptions and help text are now in English (previously partly Indonesian).
 
 ## [0.1.0-alpha.5] - 2026-10-02
 

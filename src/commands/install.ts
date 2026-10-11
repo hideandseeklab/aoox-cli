@@ -17,29 +17,29 @@ const READY_TIMEOUT_MS = 120_000
 const READY_POLL_MS = 2000
 
 export default class Install extends Command {
-  static description = 'Pasang aoox (postgres + api + web) di VPS baru lewat Docker Compose'
+  static description = 'Install aoox (postgres + api + web) on a fresh VPS with Docker Compose'
   static examples = [
     'sudo <%= config.bin %> <%= command.id %>',
     'sudo <%= config.bin %> <%= command.id %> --web-domain panel.example.com --api-domain api.panel.example.com --acme-email me@example.com',
   ]
   static flags = {
-    'acme-email': Flags.string({description: 'Wajib bersama --web-domain/--api-domain (Let’s Encrypt)'}),
-    'admin-email': Flags.string({description: 'Buat owner pertama tanpa lewat /setup di browser'}),
-    'admin-name': Flags.string({dependsOn: ['admin-email'], description: 'Nama owner pertama'}),
-    'admin-password': Flags.string({dependsOn: ['admin-email'], description: 'Password owner pertama (min. 8 karakter)'}),
-    'api-domain': Flags.string({dependsOn: ['web-domain'], description: 'Domain untuk API, lewat proxy bawaan'}),
-    dir: Flags.string({default: '/opt/aoox', description: 'Folder instalasi'}),
-    force: Flags.boolean({default: false, description: 'Timpa instalasi yang sudah ada di --dir'}),
+    'acme-email': Flags.string({description: 'Required with --web-domain/--api-domain (Let’s Encrypt)'}),
+    'admin-email': Flags.string({description: 'Create the first owner without going through /setup in the browser'}),
+    'admin-name': Flags.string({dependsOn: ['admin-email'], description: 'Name of the first owner'}),
+    'admin-password': Flags.string({dependsOn: ['admin-email'], description: 'Password of the first owner (min. 8 characters)'}),
+    'api-domain': Flags.string({dependsOn: ['web-domain'], description: 'Domain for the API, served through the bundled proxy'}),
+    dir: Flags.string({default: '/opt/aoox', description: 'Installation directory'}),
+    force: Flags.boolean({default: false, description: 'Overwrite an existing installation in --dir'}),
     'no-terminal-authorize': Flags.boolean({
       default: false,
-      description: 'Jangan buat/otorisasi key SSH Terminal web otomatis (lakukan lewat Settings > Terminal)',
+      description: 'Do not create/authorize the web Terminal SSH key automatically (do it in Settings > Terminal instead)',
     }),
     'terminal-ssh-user': Flags.string({
       description:
-        'User SSH untuk fitur Terminal web masuk ke host ini (default: user yang menjalankan sudo, atau root bila tidak ada)',
+        'SSH user the web Terminal uses to log in to this host (default: the user running sudo, or root if there is none)',
     }),
-    'web-domain': Flags.string({dependsOn: ['api-domain'], description: 'Domain untuk panel web, lewat proxy bawaan'}),
-    yes: Flags.boolean({char: 'y', default: false, description: 'Jangan tanya konfirmasi apa pun'}),
+    'web-domain': Flags.string({dependsOn: ['api-domain'], description: 'Domain for the web panel, served through the bundled proxy'}),
+    yes: Flags.boolean({char: 'y', default: false, description: 'Do not ask for any confirmation'}),
   }
 
   async run(): Promise<void> {
@@ -62,7 +62,7 @@ export default class Install extends Command {
     // `node` user) — chown it now so first use doesn't hit EACCES.
     await this.chownNode(secretsDir)
 
-    this.log('==> Mendeteksi IP publik server')
+    this.log('==> Detecting the server public IP')
     const publicIp = await detectPublicIp()
     const webOrigin = domainMode ? `https://${flags['web-domain']}` : `http://${publicIp ?? 'localhost'}:3000`
     const publicApiUrl = domainMode ? `https://${flags['api-domain']}` : `http://${publicIp ?? 'localhost'}:3001`
@@ -87,34 +87,34 @@ export default class Install extends Command {
     await writeFile(`${dir}/.env.dist`, env, {mode: 0o600})
     this.authorizeTerminal(dir, env, flags['no-terminal-authorize'])
 
-    this.log('==> Menjalankan docker compose up -d')
+    this.log('==> Running docker compose up -d')
     const composeArgs = ['compose', '-f', 'docker-compose.dist.yml']
     if (domainMode) composeArgs.push('-f', 'docker-compose.domain.yml')
     composeArgs.push('--env-file', '.env.dist', 'up', '-d')
     await dockerInherit(composeArgs, dir)
 
-    this.log('==> Menunggu API siap')
+    this.log('==> Waiting for the API to be ready')
     await this.waitReady()
 
     this.log('')
-    this.log(`aoox terpasang di ${dir}.`)
-    this.log(`Buka: ${webOrigin}`)
-    if (!flags['admin-email']) this.log('Buat akun owner pertama di /setup.')
+    this.log(`aoox is installed in ${dir}.`)
+    this.log(`Open: ${webOrigin}`)
+    if (!flags['admin-email']) this.log('Create the first owner account at /setup.')
   }
 
   private assertPreconditions(flags: {'acme-email'?: string; 'api-domain'?: string; 'web-domain'?: string}): void {
     if (process.platform !== 'linux') {
-      this.error('aoox install hanya untuk VPS Linux (dijalankan langsung di server tujuan).')
+      this.error('aoox install only runs on a Linux VPS (run it directly on the target server).')
     }
 
     if (!isRoot()) {
-      this.error('Perlu root — instalasi menulis ke path sistem dan mengelola Docker.', {
+      this.error('Root is required — the installer writes to system paths and manages Docker.', {
         suggestions: ['sudo aoox install …'],
       })
     }
 
     if (flags['web-domain'] && !flags['acme-email']) {
-      this.error('--web-domain/--api-domain butuh --acme-email (sertifikat Let’s Encrypt untuk domain itu).')
+      this.error('--web-domain/--api-domain requires --acme-email (Let’s Encrypt certificate for those domains).')
     }
   }
 
@@ -129,11 +129,11 @@ export default class Install extends Command {
       user: vars.get('TERMINAL_SSH_USER'),
     })
     if (reason) {
-      if (optOut) this.log(`==> Terminal: key tidak diotorisasi otomatis (${reason}).`)
+      if (optOut) this.log(`==> Terminal: key was not authorized automatically (${reason}).`)
       return
     }
 
-    this.log('==> Menyiapkan key SSH untuk Terminal web')
+    this.log('==> Preparing the SSH key for the web Terminal')
     const outcome = authorizeTerminalKey({installDir: resolve(dir), user: vars.get('TERMINAL_SSH_USER')!})
     if (outcome.ok) this.log(outcome.message)
     else this.warn(outcome.message)
@@ -144,7 +144,7 @@ export default class Install extends Command {
     try {
       await import('node:child_process').then(({execFileSync}) => execFileSync('chown', ['1000:1000', dir]))
     } catch (error) {
-      this.warn(`Tidak bisa chown ${dir} (${String(error)}) — terminal web mungkin perlu ini manual nanti.`)
+      this.warn(`Cannot chown ${dir} (${String(error)}) — the web terminal may need this done manually later.`)
     }
   }
 
@@ -158,9 +158,9 @@ export default class Install extends Command {
     }
 
     if (exists && !flags.force) {
-      this.error(`Sudah ada instalasi di ${dir}.`, {suggestions: [
-          'Untuk memperbaiki/menyegarkan instalasi yang ada tanpa kehilangan data: `sudo aoox reinstall`.',
-          'Beri --force hanya untuk instalasi ulang dari nol — itu membuat secret baru dan memutus akses ke data lama.',
+      this.error(`An installation already exists in ${dir}.`, {suggestions: [
+          'To repair/refresh the existing installation without losing data: `sudo aoox reinstall`.',
+          'Use --force only for a clean reinstall from scratch — it creates new secrets and cuts off access to the existing data.',
         ],
       })
     }
@@ -176,9 +176,9 @@ export default class Install extends Command {
 
     if (hasSecrets) {
       this.warn(
-        `--force MENIMPA ${dir}/.env.dist dengan secret acak baru (POSTGRES_PASSWORD, JWT_SECRET, ENCRYPTION_KEY): ` +
-          'database lama tidak bisa diakses lagi dan semua kredensial tersimpan (registry, git, S3, notifikasi, 2FA) tidak bisa didekripsi. ' +
-          'Untuk memperbaiki instalasi yang ada tanpa kehilangan data, batalkan dan jalankan `sudo aoox reinstall`.',
+        `--force OVERWRITES ${dir}/.env.dist with new random secrets (POSTGRES_PASSWORD, JWT_SECRET, ENCRYPTION_KEY): ` +
+          'the existing database can no longer be accessed and all stored credentials (registry, git, S3, notifications, 2FA) can no longer be decrypted. ' +
+          'To repair the existing installation without losing data, cancel and run `sudo aoox reinstall`.',
       )
     }
 
@@ -186,25 +186,25 @@ export default class Install extends Command {
     const ok = await confirm({
       default: !hasSecrets,
       message: hasSecrets
-        ? `Tetap timpa .env.dist dan buat secret baru di ${dir} (data lama tidak akan terbaca)?`
-        : `Pasang aoox di ${dir}${exists ? ' (menimpa yang ada)' : ''} dan jalankan docker compose up -d?`,
+        ? `Still overwrite .env.dist and create new secrets in ${dir} (the existing data will not be readable)?`
+        : `Install aoox in ${dir}${exists ? ' (overwriting the existing one)' : ''} and run docker compose up -d?`,
     })
     if (!ok) this.exit(0)
   }
 
   private async ensureDocker(yes: boolean): Promise<void> {
     if (commandExists('docker') && dockerRunning()) return
-    this.log('Docker belum terpasang/berjalan.')
+    this.log('Docker is not installed or not running yet.')
     if (!yes) {
-      const ok = await confirm({default: true, message: `Pasang Docker sekarang lewat ${DOCKER_INSTALL_SCRIPT}?`})
-      if (!ok) this.error('Docker diperlukan untuk melanjutkan.')
+      const ok = await confirm({default: true, message: `Install Docker now via ${DOCKER_INSTALL_SCRIPT}?`})
+      if (!ok) this.error('Docker is required to continue.')
     }
 
     this.log(`==> ${DOCKER_INSTALL_SCRIPT}`)
     await runShellInherit(DOCKER_INSTALL_SCRIPT)
     if (!(commandExists('docker') && dockerRunning())) {
-      this.error('Docker masih belum bisa dijalankan setelah instalasi.', {
-        suggestions: ['Cek `systemctl status docker`, lalu jalankan aoox install lagi.'],
+      this.error('Docker still cannot be started after installation.', {
+        suggestions: ['Check `systemctl status docker`, then run aoox install again.'],
       })
     }
   }
@@ -219,7 +219,7 @@ export default class Install extends Command {
     }
 
     if (Date.now() >= deadline) {
-      this.warn('API belum menjawab dalam waktu yang diharapkan — cek `docker compose logs api` di folder instalasi.')
+      this.warn('The API did not respond in the expected time — check `docker compose logs api` in the installation directory.')
       return
     }
 

@@ -17,7 +17,7 @@ export function dockerInherit(args: string[], cwd: string): Promise<void> {
     child.on('error', (error: NodeJS.ErrnoException) => {
       reject(
         error.code === 'ENOENT'
-          ? new Error('docker tidak ditemukan di PATH. Pasang Docker Desktop/Engine dulu.')
+          ? new Error('docker not found in PATH. Install Docker Desktop or Docker Engine first.')
           : error,
       )
     })
@@ -41,7 +41,7 @@ export function dockerLogin(registryUrl: string, username: string, password: str
     child.on('error', (error: NodeJS.ErrnoException) => {
       reject(
         error.code === 'ENOENT'
-          ? new Error('docker tidak ditemukan di PATH. Pasang Docker Desktop/Engine dulu.')
+          ? new Error('docker not found in PATH. Install Docker Desktop or Docker Engine first.')
           : error,
       )
     })

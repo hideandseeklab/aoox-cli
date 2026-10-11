@@ -28,7 +28,7 @@ export class MissingSecretsError extends Error {
 
   constructor(missing: string[]) {
     super(
-      `.env.dist tidak punya ${missing.join(', ')}. Ini rahasia yang tidak boleh dibuat ulang (akses ke database/kredensial lama akan putus) — pulihkan dari backup Anda lalu ulangi.`,
+      `.env.dist is missing ${missing.join(', ')}. These are secrets that must not be regenerated (access to the existing database/credentials would be lost) — restore them from your backup, then run it again.`,
     )
     this.missing = missing
     this.name = 'MissingSecretsError'
@@ -146,7 +146,7 @@ export function mergeEnv(
   const warnings: string[] = []
   const sshUser = parseEnv(content).get('TERMINAL_SSH_USER')
   if (sshUser === '') {
-    warnings.push('TERMINAL_SSH_USER kosong — Terminal web akan error. Isi lewat --terminal-ssh-user atau Settings → Environment.')
+    warnings.push('TERMINAL_SSH_USER is empty — the web Terminal will fail. Set it with --terminal-ssh-user or in Settings → Environment.')
   }
 
   return {added, content, overridden, warnings}
@@ -242,7 +242,7 @@ export function summarizeDiff(before: string, after: string, max = 30): {added: 
   }
 
   const shown = lines.slice(0, max)
-  if (lines.length > max) shown.push(`… (${lines.length - max} baris lagi)`)
+  if (lines.length > max) shown.push(`… (${lines.length - max} more lines)`)
   return {added, lines: shown, removed}
 }
 

@@ -17,14 +17,14 @@ type Config = Awaited<ReturnType<typeof loadCredentials>>
 const POLL_MS = 1500
 
 export default class Deploy extends Command {
-  static description = 'Build image lokal, push ke registry aoox, lalu deploy (repo harus di-`aoox link` dulu)'
+  static description = 'Build a local image, push it to the aoox registry, then deploy (the repo must be linked with `aoox link` first)'
   static examples = ['<%= config.bin %> <%= command.id %>', '<%= config.bin %> <%= command.id %> --tag v1.2.3']
   static flags = {
     ...connectionFlags,
     context: Flags.string({default: '.', description: 'Docker build context'}),
-    dockerfile: Flags.string({char: 'f', default: 'Dockerfile', description: 'Path ke Dockerfile'}),
-    registry: Flags.string({description: 'ID registry tujuan push; default registry self-hosted'}),
-    tag: Flags.string({description: 'Tag image; default git short SHA (+ -dirty)'}),
+    dockerfile: Flags.string({char: 'f', default: 'Dockerfile', description: 'Path to the Dockerfile'}),
+    registry: Flags.string({description: 'Registry ID to push to; defaults to the self-hosted registry'}),
+    tag: Flags.string({description: 'Image tag; defaults to the git short SHA (+ -dirty)'}),
   }
 
   async run(): Promise<void> {
@@ -33,7 +33,7 @@ export default class Deploy extends Command {
 
     const link = await readLink(cwd)
     if (!link) {
-      this.error('Repo ini belum di-link.', {suggestions: ['Jalankan `aoox link` dulu.']})
+      this.error('This repo is not linked yet.', {suggestions: ['Run `aoox link` first.']})
     }
 
     let config: Config
@@ -41,7 +41,7 @@ export default class Deploy extends Command {
       config = await loadCredentials(this.config.configDir, flags, link.url)
     } catch (error) {
       if (error instanceof MissingCredentialsError) {
-        this.error(error.message, {suggestions: ['Jalankan `aoox login`.']})
+        this.error(error.message, {suggestions: ['Run `aoox login`.']})
       }
 
       throw error
@@ -65,7 +65,7 @@ export default class Deploy extends Command {
     this.log(`==> Push ${imageRef}`)
     await dockerInherit(['push', imageRef], cwd)
 
-    this.log('==> Memutakhirkan aplikasi & memicu deploy')
+    this.log('==> Updating the application & triggering a deploy')
     await api(config, `/applications/${app.id}`, {
       body: {imageRef, imageRegistryId: registry.id, sourceType: 'image'},
       method: 'PATCH',
@@ -93,7 +93,7 @@ export default class Deploy extends Command {
     }
 
     if (dep.status === 'failed') {
-      this.error(dep.errorMessage ?? 'Deployment gagal.')
+      this.error(dep.errorMessage ?? 'Deployment failed.')
     }
 
     await new Promise((resolve) => {
@@ -107,11 +107,11 @@ export default class Deploy extends Command {
       return await api<ApplicationDetail>(config, `/applications/${id}`)
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
-        this.error('Token tidak berlaku lagi.', {suggestions: ['Jalankan `aoox login`.']})
+        this.error('The token is no longer valid.', {suggestions: ['Run `aoox login`.']})
       }
 
       if (error instanceof ApiError && error.status === 404) {
-        this.error('Aplikasi yang di-link tidak ditemukan lagi.', {suggestions: ['Jalankan `aoox link` lagi.']})
+        this.error('The linked application no longer exists.', {suggestions: ['Run `aoox link` again.']})
       }
 
       throw error
@@ -122,13 +122,13 @@ export default class Deploy extends Command {
     const registries = await api<Registry[]>(config, '/registries')
     if (registryId) {
       const found = registries.find((r) => r.id === registryId)
-      if (!found) this.error(`Registry ${registryId} tidak ditemukan.`)
+      if (!found) this.error(`Registry ${registryId} not found.`)
       return found
     }
 
     if (registries.length === 0) {
-      this.error('Belum ada registry di panel.', {
-        suggestions: ['Provision registry lokal di Infrastruktur, atau tambah registry eksternal.'],
+      this.error('No registry in the panel yet.', {
+        suggestions: ['Provision a local registry under Infrastructure, or add an external registry.'],
       })
     }
 
@@ -137,14 +137,14 @@ export default class Deploy extends Command {
     if (registries.length === 1) return registries[0]
 
     if (!process.stdin.isTTY) {
-      this.error('Ada beberapa registry dan tidak ada yang self-hosted; tidak bisa memilih otomatis.', {
-        suggestions: ['Beri --registry <id>.'],
+      this.error('There are several registries and none is self-hosted; cannot pick one automatically.', {
+        suggestions: ['Pass --registry <id>.'],
       })
     }
 
     return select({
       choices: registries.map((r) => ({name: `${r.name} (${r.url})`, value: r})),
-      message: 'Pilih registry',
+      message: 'Select a registry',
     })
   }
 
@@ -154,8 +154,8 @@ export default class Deploy extends Command {
       return await api<Deployment>(config, `/applications/${applicationId}/deploy`, {method: 'POST'})
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
-        this.error('Sudah ada deployment yang berjalan untuk aplikasi ini.', {
-          suggestions: ['Tunggu deployment itu selesai, lalu coba lagi.'],
+        this.error('A deployment is already running for this application.', {
+          suggestions: ['Wait for that deployment to finish, then try again.'],
         })
       }
 

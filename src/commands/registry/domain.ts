@@ -13,22 +13,22 @@ import {connectionFlags, loadCredentials} from '../../lib/flags.js'
  * an id, since there is exactly one self-hosted registry per install.
  */
 export default class RegistryDomain extends Command {
-  static description = 'Set atau hapus domain kustom untuk registry self-hosted'
+  static description = 'Set or remove the custom domain for the self-hosted registry'
   static examples = [
     '<%= config.bin %> <%= command.id %> --set registry.example.com',
     '<%= config.bin %> <%= command.id %> --clear',
   ]
 static flags = {
     ...connectionFlags,
-    clear: Flags.boolean({description: 'Hapus domain, kembali ke host:port'}),
-    set: Flags.string({description: 'Domain untuk registry self-hosted'}),
+    clear: Flags.boolean({description: 'Remove the domain, falling back to host:port'}),
+    set: Flags.string({description: 'Domain for the self-hosted registry'}),
   }
 
   async run(): Promise<void> {
     const {flags} = await this.parse(RegistryDomain)
 
     if (Boolean(flags.set) === flags.clear) {
-      this.error('Beri salah satu: --set <domain> atau --clear.')
+      this.error('Pass one of: --set <domain> or --clear.')
     }
 
     let config: Awaited<ReturnType<typeof loadCredentials>>
@@ -36,7 +36,7 @@ static flags = {
       config = await loadCredentials(this.config.configDir, flags)
     } catch (error) {
       if (error instanceof MissingCredentialsError) {
-        this.error(error.message, {suggestions: ['Jalankan `aoox login` dulu ke panel ini.']})
+        this.error(error.message, {suggestions: ['Run `aoox login` against this panel first.']})
       }
 
       throw error
@@ -45,8 +45,8 @@ static flags = {
     const registries = await api<Registry[]>(config, '/registries')
     const registry = registries.find((r) => r.type === 'self-hosted')
     if (!registry) {
-      this.error('Belum ada registry self-hosted di panel ini.', {
-        suggestions: ['Provision dulu dari Settings -> Registry.'],
+      this.error('There is no self-hosted registry in this panel yet.', {
+        suggestions: ['Provision one first from Settings -> Registry.'],
       })
     }
 
@@ -55,11 +55,11 @@ static flags = {
         body: {domain: flags.clear ? null : flags.set},
         method: 'PATCH',
       })
-      this.log(flags.clear ? `Domain dihapus. Registry kembali di ${updated.url}.` : `Domain diterapkan: ${updated.url}`)
+      this.log(flags.clear ? `Domain removed. Registry is back at ${updated.url}.` : `Domain applied: ${updated.url}`)
     } catch (error) {
       if (error instanceof ApiError && error.status === 400) {
         this.error(error.message, {
-          suggestions: ['Pastikan proxy sudah di-provision dan PROXY_ACME_EMAIL sudah diisi.'],
+          suggestions: ['Make sure the proxy is provisioned and PROXY_ACME_EMAIL is set.'],
         })
       }
 

@@ -9,15 +9,15 @@ import {connectionFlags, loadCredentials} from '../lib/flags.js'
 import {writeLink} from '../lib/link.js'
 
 export default class Link extends Command {
-  static description = 'Hubungkan folder ini ke sebuah aplikasi di panel (dipakai `aoox deploy`/`aoox logs`)'
+  static description = 'Link this folder to an application in the panel (used by `aoox deploy`/`aoox logs`)'
   static examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --project <id> --app <id>',
   ]
   static flags = {
     ...connectionFlags,
-    app: Flags.string({description: 'ID aplikasi; lewati pemilihan interaktif'}),
-    project: Flags.string({description: 'ID project; lewati pemilihan interaktif'}),
+    app: Flags.string({description: 'Application ID; skip the interactive selection'}),
+    project: Flags.string({description: 'Project ID; skip the interactive selection'}),
   }
 
   async run(): Promise<void> {
@@ -28,7 +28,7 @@ export default class Link extends Command {
       config = await loadCredentials(this.config.configDir, flags)
     } catch (error) {
       if (error instanceof MissingCredentialsError) {
-        this.error(error.message, {suggestions: ['Jalankan `aoox login`.']})
+        this.error(error.message, {suggestions: ['Run `aoox login`.']})
       }
 
       throw error
@@ -45,8 +45,8 @@ export default class Link extends Command {
       url: config.url,
     })
 
-    this.log(`Ter-link: ${project.name} / ${application.name} (${application.appName})`)
-    this.log(`Ditulis ke ${path} — aman di-commit, tidak memuat rahasia.`)
+    this.log(`Linked: ${project.name} / ${application.name} (${application.appName})`)
+    this.log(`Written to ${path} — safe to commit, contains no secrets.`)
   }
 
   private async pickApplication(
@@ -57,19 +57,19 @@ export default class Link extends Command {
     const apps = await api<Application[]>(config, `/applications?projectId=${project.id}`)
     if (appId) {
       const found = apps.find((a) => a.id === appId)
-      if (!found) this.error(`Aplikasi ${appId} tidak ditemukan di project ${project.name}.`)
+      if (!found) this.error(`Application ${appId} not found in project ${project.name}.`)
       return found
     }
 
     if (apps.length === 0) {
-      this.error(`Project "${project.name}" belum punya aplikasi.`, {
-        suggestions: ['Buat aplikasinya dulu di panel, lalu jalankan `aoox link` lagi.'],
+      this.error(`Project "${project.name}" has no applications yet.`, {
+        suggestions: ['Create the application in the panel first, then run `aoox link` again.'],
       })
     }
 
     if (!process.stdin.isTTY) {
-      this.error('Tidak ada terminal interaktif untuk memilih aplikasi.', {
-        suggestions: ['Beri --app <id>.'],
+      this.error('No interactive terminal to pick an application from.', {
+        suggestions: ['Pass --app <id>.'],
       })
     }
 
@@ -79,7 +79,7 @@ export default class Link extends Command {
         name: `${a.name} (${a.appName})`,
         value: a,
       })),
-      message: 'Pilih aplikasi',
+      message: 'Select an application',
     })
   }
 
@@ -92,7 +92,7 @@ export default class Link extends Command {
       projects = await api<Project[]>(config, '/projects')
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
-        this.error('Token tidak berlaku lagi.', {suggestions: ['Jalankan `aoox login`.']})
+        this.error('The token is no longer valid.', {suggestions: ['Run `aoox login`.']})
       }
 
       throw error
@@ -100,23 +100,23 @@ export default class Link extends Command {
 
     if (projectId) {
       const found = projects.find((p) => p.id === projectId)
-      if (!found) this.error(`Project ${projectId} tidak ditemukan.`)
+      if (!found) this.error(`Project ${projectId} not found.`)
       return found
     }
 
     if (projects.length === 0) {
-      this.error('Belum ada project di panel ini.', {suggestions: ['Buat project dulu di panel.']})
+      this.error('No projects in this panel yet.', {suggestions: ['Create a project in the panel first.']})
     }
 
     if (!process.stdin.isTTY) {
-      this.error('Tidak ada terminal interaktif untuk memilih project.', {
-        suggestions: ['Beri --project <id>.'],
+      this.error('No interactive terminal to pick a project from.', {
+        suggestions: ['Pass --project <id>.'],
       })
     }
 
     return select({
       choices: projects.map((p) => ({name: p.name, value: p})),
-      message: 'Pilih project',
+      message: 'Select a project',
     })
   }
 }

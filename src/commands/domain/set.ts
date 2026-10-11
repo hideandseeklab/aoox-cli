@@ -23,16 +23,16 @@ interface UpdatePanelDomainResult {
  * containers. Requires INSTALL_DIR to already be set in the panel's .env.dist.
  */
 export default class DomainSet extends Command {
-  static description = "Set domain kustom untuk panel itu sendiri (bukan aplikasi) lewat API panel yang sudah jalan"
+  static description = "Set a custom domain for the panel itself (not an application) through the running panel API"
   static examples = [
     '<%= config.bin %> <%= command.id %> --web panel.example.com --api api.example.com',
     '<%= config.bin %> <%= command.id %> --web panel.example.com --api api.example.com --acme-email you@example.com',
   ]
 static flags = {
     ...connectionFlags,
-    'acme-email': Flags.string({description: "Email untuk sertifikat Let's Encrypt"}),
-    api: Flags.string({description: 'Domain untuk API panel', required: true}),
-    web: Flags.string({description: 'Domain untuk dashboard panel', required: true}),
+    'acme-email': Flags.string({description: "Email for the Let's Encrypt certificate"}),
+    api: Flags.string({description: 'Domain for the panel API', required: true}),
+    web: Flags.string({description: 'Domain for the panel dashboard', required: true}),
   }
 
   async run(): Promise<void> {
@@ -43,7 +43,7 @@ static flags = {
       config = await loadCredentials(this.config.configDir, flags)
     } catch (error) {
       if (error instanceof MissingCredentialsError) {
-        this.error(error.message, {suggestions: ['Jalankan `aoox login` dulu ke panel ini.']})
+        this.error(error.message, {suggestions: ['Run `aoox login` against this panel first.']})
       }
 
       throw error
@@ -62,23 +62,23 @@ static flags = {
     } catch (error) {
       if (error instanceof ApiError && error.status === 400) {
         this.error(error.message, {
-          suggestions: ['Pastikan INSTALL_DIR sudah diisi di .env.dist panel, lalu restart stack dan coba lagi.'],
+          suggestions: ['Make sure INSTALL_DIR is set in the panel .env.dist, then restart the stack and try again.'],
         })
       }
 
       throw error
     }
 
-    this.log(`Domain disimpan: ${flags.web} (dashboard), ${flags.api} (API).`)
-    this.log('Panel akan restart beberapa detik untuk menerapkannya — koneksi ke API ini akan sempat terputus.')
+    this.log(`Domain saved: ${flags.web} (dashboard), ${flags.api} (API).`)
+    this.log('The panel will restart for a few seconds to apply it — the connection to this API will drop briefly.')
 
     if (result.proxyAutoProvisioned) {
       this.log('')
-      this.warn('Reverse proxy belum jalan sebelumnya — sudah diaktifkan otomatis.')
-      this.log('Domain baru bisa diakses kalau tiga hal ini juga sudah benar:')
-      this.log(`  1. DNS A record ${flags.web} dan ${flags.api} sudah mengarah ke IP server ini.`)
-      this.log('  2. Port 80 dan 443 terbuka untuk publik (firewall OS maupun security group provider VPS).')
-      this.log("  3. Tunggu sampai semenit — sertifikat HTTPS (Let's Encrypt) baru diterbitkan saat domain pertama diakses.")
+      this.warn('The reverse proxy was not running before — it has been enabled automatically.')
+      this.log('The new domains will be reachable only if these three things are also correct:')
+      this.log(`  1. DNS A records for ${flags.web} and ${flags.api} point to this server's IP.`)
+      this.log('  2. Ports 80 and 443 are open to the public (both the OS firewall and the VPS provider security group).')
+      this.log("  3. Wait up to a minute — the HTTPS certificate (Let's Encrypt) is issued when the first domain is accessed.")
     }
   }
 }

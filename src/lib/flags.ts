@@ -12,12 +12,12 @@ import {readConfig, resolveCredentials} from './config.js'
 export const connectionFlags = {
   token: Flags.string({
     char: 't',
-    description: 'API token (aoox_…); default dari hasil `aoox login`',
+    description: 'API token (aoox_…); defaults to the value from `aoox login`',
     env: 'AOOX_TOKEN',
   }),
   url: Flags.string({
     char: 'u',
-    description: 'URL panel aoox; default dari hasil `aoox login`',
+    description: 'aoox panel URL; defaults to the value from `aoox login`',
     env: 'AOOX_URL',
   }),
 }

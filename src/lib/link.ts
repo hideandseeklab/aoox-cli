@@ -32,11 +32,11 @@ export async function readLink(cwd: string): Promise<LinkFile | null> {
   try {
     parsed = JSON.parse(raw) as Partial<LinkFile>
   } catch {
-    throw new Error(`File link rusak (bukan JSON yang sah): ${path}`)
+    throw new Error(`Link file is corrupt (not valid JSON): ${path}`)
   }
 
   if (!parsed.applicationId || !parsed.projectId || !parsed.url) {
-    throw new Error(`File link tidak lengkap: ${path}. Jalankan \`aoox link\` lagi.`)
+    throw new Error(`Link file is incomplete: ${path}. Run \`aoox link\` again.`)
   }
 
   return {

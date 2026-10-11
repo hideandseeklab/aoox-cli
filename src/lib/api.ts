@@ -59,7 +59,7 @@ export async function api<T>(config: CliConfig, path: string, options: RequestOp
     // fetch only rejects for transport problems (DNS, refused, TLS, timeout);
     // an HTTP error status resolves normally.
     const reason = error instanceof Error ? error.message : String(error)
-    throw new ApiError(0, `Tidak bisa menghubungi panel di ${config.url} (${reason})`)
+    throw new ApiError(0, `Cannot reach the panel at ${config.url} (${reason})`)
   }
 
   if (response.status === 204) return undefined as T

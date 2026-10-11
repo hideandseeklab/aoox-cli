@@ -26,11 +26,11 @@ interface InstanceUpdateStatus {
  * "Update aoox".
  */
 export default class Update extends Command {
-  static description = 'Cek atau terapkan update untuk panel aoox itu sendiri'
+  static description = 'Check for or apply updates to the aoox panel itself'
   static examples = ['<%= config.bin %> <%= command.id %>', '<%= config.bin %> <%= command.id %> --apply']
 static flags = {
     ...connectionFlags,
-    apply: Flags.boolean({description: 'Terapkan update jika tersedia (pull + restart)'}),
+    apply: Flags.boolean({description: 'Apply the update if one is available (pull + restart)'}),
   }
 
   async run(): Promise<void> {
@@ -41,25 +41,25 @@ static flags = {
       config = await loadCredentials(this.config.configDir, flags)
     } catch (error) {
       if (error instanceof MissingCredentialsError) {
-        this.error(error.message, {suggestions: ['Jalankan `aoox login` dulu ke panel ini.']})
+        this.error(error.message, {suggestions: ['Run `aoox login` against this panel first.']})
       }
 
       throw error
     }
 
     const status = await api<InstanceUpdateStatus>(config, '/instance/update')
-    this.log(`Versi berjalan: ${status.currentVersion}`)
+    this.log(`Running version: ${status.currentVersion}`)
     this.printImage('api', status.api)
     this.printImage('web', status.web)
 
     const available = status.api.updateAvailable || status.web.updateAvailable
     if (!available) {
-      this.log('Sudah versi terbaru.')
+      this.log('Already up to date.')
       return
     }
 
     if (!flags.apply) {
-      this.log('Update tersedia. Jalankan dengan --apply untuk menerapkannya.')
+      this.log('An update is available. Run with --apply to apply it.')
       return
     }
 
@@ -68,18 +68,18 @@ static flags = {
     } catch (error) {
       if (error instanceof ApiError && error.status === 400) {
         this.error(error.message, {
-          suggestions: ['Pastikan INSTALL_DIR sudah diisi di .env.dist panel, lalu restart stack dan coba lagi.'],
+          suggestions: ['Make sure INSTALL_DIR is set in the panel .env.dist, then restart the stack and try again.'],
         })
       }
 
       throw error
     }
 
-    this.log('Update diterapkan — panel akan restart beberapa detik untuk menerapkannya.')
+    this.log('Update applied — the panel will restart for a few seconds to apply it.')
   }
 
   private printImage(label: string, status: ImageUpdateStatus): void {
-    const state = status.currentDigest === null ? 'baseline baru' : status.updateAvailable ? 'update tersedia' : 'terbaru'
+    const state = status.currentDigest === null ? 'new baseline' : status.updateAvailable ? 'update available' : 'up to date'
     this.log(`  ${label}: ${status.image} (${state})`)
   }
 }

@@ -37,7 +37,7 @@ export async function readConfig(configDir: string): Promise<CliConfig | null> {
     if (!parsed.url || !parsed.token) return null
     return {token: parsed.token, url: normalizeUrl(parsed.url)}
   } catch {
-    throw new Error(`Config rusak (bukan JSON yang sah): ${path}`)
+    throw new Error(`Config is corrupt (not valid JSON): ${path}`)
   }
 }
 
@@ -82,7 +82,7 @@ export interface CredentialInput {
 export function resolveCredentials({file, token, url}: CredentialInput): CliConfig {
   const resolvedUrl = normalizeUrl(url ?? file?.url ?? '')
   if (!resolvedUrl) {
-    throw new MissingCredentialsError('Belum ada URL panel. Jalankan `aoox login` dulu.')
+    throw new MissingCredentialsError('No panel URL yet. Run `aoox login` first.')
   }
 
   let resolvedToken = token?.trim()
@@ -94,8 +94,8 @@ export function resolveCredentials({file, token, url}: CredentialInput): CliConf
   if (!resolvedToken) {
     throw new MissingCredentialsError(
       url && file
-        ? `Tidak ada token untuk ${resolvedUrl} (token tersimpan milik ${normalizeUrl(file.url)}). Beri --token, atau login ke URL itu.`
-        : 'Belum ada API token. Jalankan `aoox login` dulu.',
+        ? `No token for ${resolvedUrl} (the stored token belongs to ${normalizeUrl(file.url)}). Pass --token, or log in to that URL.`
+        : 'No API token yet. Run `aoox login` first.',
     )
   }
 
