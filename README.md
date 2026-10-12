@@ -3,7 +3,7 @@ aoox
 
 CLI for [aoox](https://github.com/hideandseeklab/aoox-api), a self-hosted PaaS — build and deploy
 
-Website: [aoox.dev](https://aoox.dev/en) · Docs: [aoox.dev/en/docs](https://aoox.dev/en/docs) · Changelog: [aoox.dev/en/changelog](https://aoox.dev/en/changelog)
+Website: [aoox.dev](https://aoox.dev) · Docs: [aoox.dev/docs](https://aoox.dev/docs) · Changelog: [aoox.dev/changelog](https://aoox.dev/changelog)
 
 Related repos: [aoox-api](https://github.com/hideandseeklab/aoox-api) (backend) ·
 [aoox-web](https://github.com/hideandseeklab/aoox-web) (dashboard) ·
