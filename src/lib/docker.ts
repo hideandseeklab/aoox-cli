@@ -66,3 +66,37 @@ export function dockerCapture(args: string[], cwd?: string): Promise<string> {
     child.on('close', (code) => resolve(code === 0 ? out.trim() : ''))
   })
 }
+
+export type DockerEngineStatus = 'missing' | 'ok' | 'unreachable'
+
+/**
+ * Whether the local Docker engine answers: `docker version` exits non-zero when the CLI is
+ * installed but the daemon (Docker Desktop, dockerd) is not running or the socket is wrong.
+ */
+export function dockerEngineStatus(timeoutMs = 10_000): Promise<DockerEngineStatus> {
+  return new Promise((resolve) => {
+    const child = spawn('docker', ['version', '--format', '{{.Server.Version}}'], {stdio: 'ignore'})
+    const timer = setTimeout(() => {
+      child.kill()
+      resolve('unreachable')
+    }, timeoutMs)
+    child.on('error', (error: NodeJS.ErrnoException) => {
+      clearTimeout(timer)
+      resolve(error.code === 'ENOENT' ? 'missing' : 'unreachable')
+    })
+    child.on('close', (code) => {
+      clearTimeout(timer)
+      resolve(code === 0 ? 'ok' : 'unreachable')
+    })
+  })
+}
+
+/** What to print when the engine is not usable: a headline plus one hint line. */
+export function dockerUnavailableLines(status: Exclude<DockerEngineStatus, 'ok'>): [string, string] {
+  return status === 'missing'
+    ? ['Docker is not installed (docker was not found in PATH).', 'Install Docker Desktop or Docker Engine, then try again.']
+    : [
+        'Cannot connect to the Docker engine.',
+        'Start Docker Desktop (or the Docker service, e.g. `sudo systemctl start docker`), then try again.',
+      ]
+}

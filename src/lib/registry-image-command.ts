@@ -5,6 +5,7 @@ import type {Registry, RegistryCredentials} from './types.js'
 
 import {api} from './api.js'
 import {MissingCredentialsError} from './config.js'
+import {dockerEngineStatus, dockerInherit, dockerLogin, dockerUnavailableLines} from './docker.js'
 import {connectionFlags, loadCredentials} from './flags.js'
 import {ImageNameError, parseImageName, registryHost, suggestNextVersion} from './image-ref.js'
 import {warnIfOutdated} from './outdated.js'
@@ -36,13 +37,28 @@ export const registryImageFlags = {
 
 /** Shared by `aoox registry build` and `aoox registry push`. */
 export abstract class RegistryImageCommand extends Command {
-  /** Prints `✖ first line` plus plain hint lines to stderr and exits 1. */
+  /** Prints `❌ first line` plus plain hint lines to stderr and exits 1. */
   protected fail(...lines: string[]): never {
     for (const [i, line] of lines.entries()) {
-      this.logToStderr(i === 0 ? `✖ ${line}` : line)
+      this.logToStderr(i === 0 ? `❌ ${line}` : line)
     }
 
     this.exit(1)
+  }
+
+  /** `docker login` (when the registry has credentials) then `docker push`; shared by `push` and `build --push`. */
+  protected async pushImage(image: ResolvedImage): Promise<void> {
+    const {password, username} = image.credentials
+    if (username && password) {
+      this.log(`==> docker login ${image.host}`)
+      await dockerLogin(image.host, username, password, process.cwd())
+    }
+
+    this.log(`==> Push ${image.fullRef}`)
+    await dockerInherit(['push', image.fullRef], process.cwd())
+
+    this.log(`Pushed ${image.fullRef}`)
+    this.log('Use it in the dashboard: New application → Ready-made image')
   }
 
   /** The registry layer: exists -> fail unless `--force` (or the `latest` tag). */
@@ -74,6 +90,12 @@ export abstract class RegistryImageCommand extends Command {
         ? `Pick a new version (e.g. ${name}:${bumped}), or add --force to ${options.verb} it.`
         : `Pick a new version, or add --force to ${options.verb} it.`,
     )
+  }
+
+  /** Stops early with a plain message when the local Docker engine is missing or not running. */
+  protected async requireDocker(): Promise<void> {
+    const status = await dockerEngineStatus()
+    if (status !== 'ok') this.fail(...dockerUnavailableLines(status))
   }
 
   protected async resolveImage(

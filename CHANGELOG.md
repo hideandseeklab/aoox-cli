@@ -12,6 +12,17 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 - **One npm tag: `latest`.** Releases publish under `latest` only; the publish workflow no longer tries to move an `alpha` tag (npm Trusted Publishing cannot move tags, so `alpha` was left behind on 0.1.0-alpha.7 while `latest` got 0.1.0-alpha.8). Install with `npm i -g @hideandseeklab/aoox` and upgrade with `aoox update`.
 
+### Added
+
+- **`aoox registry build <name:version> --push`** builds and then pushes in one step (the same login and push as `aoox registry push`; the version is checked against the registry once, before the build). Without `--push`, the closing hint now also mentions it.
+- **Plain `aoox` shows the IP address and the panel domain side by side** once a panel domain is set, e.g. `Dashboard  http://203.0.113.7:3000 - dashboard.example.com`, the same for the API and the self-hosted registry (`http://203.0.113.7:5000 - registry.example.com (self-hosted)`). The domains come from the dashboard's discovery file; when you signed in with a domain, the IP comes from DNS and is shown only after it answers as aoox (or as a Docker registry), so a CDN or proxy address never appears. Each lookup is limited to 1.5 s and runs alongside the registry check.
+
+### Fixed
+
+- **A clear message when Docker is not running.** `aoox registry build`, `aoox registry push` and `aoox deploy` first check the local Docker engine (`docker version`) and stop with `❌ Cannot connect to the Docker engine.` plus "Start Docker Desktop (or the Docker service, e.g. `sudo systemctl start docker`), then try again." (or that Docker is not installed), instead of docker's raw `failed to connect to the docker API at npipe:…` and `DockerCommandError`. `push` no longer reports "No local image" just because the engine is down.
+- **Error lines use a red ❌ instead of ✖.** Some terminals (Windows Terminal) draw ✖ as a wide emoji over the following space, so `aoox registry build|push` and `aoox update` errors read `✖A version…`; ❌ is always given two columns.
+- **Plain `aoox` no longer shows the API address as the dashboard.** A login saved before 0.1.0-alpha.8 (or made with the API address) has no dashboard address; the connection summary now says `Dashboard  unknown (sign in again with the dashboard address: aoox login)` instead of repeating the API address (e.g. `:3001`). It also first tries to find the dashboard on port 3000 of the API host, so an old login usually shows the right address without signing in again.
+
 ## [0.1.0-alpha.8] - 2026-10-12
 
 ### Changed

@@ -5,7 +5,7 @@ import type {ApplicationDetail, Deployment, Registry, RegistryCredentials} from 
 
 import {api, ApiError} from '../lib/api.js'
 import {MissingCredentialsError} from '../lib/config.js'
-import {dockerInherit, dockerLogin} from '../lib/docker.js'
+import {dockerEngineStatus, dockerInherit, dockerLogin, dockerUnavailableLines} from '../lib/docker.js'
 import {connectionFlags, loadCredentials} from '../lib/flags.js'
 import {deployTag} from '../lib/git.js'
 import {imageRefFor} from '../lib/image-ref.js'
@@ -59,6 +59,12 @@ export default class Deploy extends Command {
 
     const tag = flags.tag ?? deployTag(cwd)
     const imageRef = imageRefFor({appName: app.appName, projectName: app.project.name, registryUrl: registry.url, tag})
+
+    const engine = await dockerEngineStatus()
+    if (engine !== 'ok') {
+      const [headline, hint] = dockerUnavailableLines(engine)
+      this.error(headline, {suggestions: [hint]})
+    }
 
     this.log(`==> Build ${imageRef}`)
     await dockerInherit(['build', '-t', imageRef, '-f', flags.dockerfile, flags.context], cwd)

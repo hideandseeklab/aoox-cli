@@ -41,7 +41,7 @@ export default class Update extends Command {
     try {
       newest = pickNewest(await fetchPackument(), installed)
     } catch (error) {
-      this.logToStderr(`✖ ${(error as Error).message}`)
+      this.logToStderr(`❌ ${(error as Error).message}`)
       this.exit(1)
     }
 
@@ -71,7 +71,7 @@ export default class Update extends Command {
     this.log(`==> npm ${npmInstallArgs(newest).join(' ')}`)
     const code = await runNpm(npmInstallArgs(newest))
     if (code !== 0) {
-      this.logToStderr(`✖ npm exited with code ${code}. Run it yourself: npm i -g ${PACKAGE_NAME}@${newest}`)
+      this.logToStderr(`❌ npm exited with code ${code}. Run it yourself: npm i -g ${PACKAGE_NAME}@${newest}`)
       this.exit(1)
     }
 

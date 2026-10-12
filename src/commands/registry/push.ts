@@ -1,6 +1,6 @@
 import {Args} from '@oclif/core'
 
-import {dockerCapture, dockerInherit, dockerLogin} from '../../lib/docker.js'
+import {dockerCapture} from '../../lib/docker.js'
 import {RegistryImageCommand, registryImageFlags} from '../../lib/registry-image-command.js'
 
 /**
@@ -22,6 +22,8 @@ export default class RegistryPush extends RegistryImageCommand {
   async run(): Promise<void> {
     const {args, flags} = await this.parse(RegistryPush)
     const image = await this.resolveImage(args.image, flags, 'aoox registry push myapp:1.0.0')
+    // Before the image check: with the engine down every image looks "missing".
+    await this.requireDocker()
 
     const local = await dockerCapture(['image', 'inspect', '--format', '{{.Id}}', image.fullRef])
     if (!local) {
@@ -29,17 +31,6 @@ export default class RegistryPush extends RegistryImageCommand {
     }
 
     await this.refuseExisting(image, {force: flags.force, verb: 'overwrite'})
-
-    const {password, username} = image.credentials
-    if (username && password) {
-      this.log(`==> docker login ${image.host}`)
-      await dockerLogin(image.host, username, password, process.cwd())
-    }
-
-    this.log(`==> Push ${image.fullRef}`)
-    await dockerInherit(['push', image.fullRef], process.cwd())
-
-    this.log(`Pushed ${image.fullRef}`)
-    this.log('Use it in the dashboard: New application → Ready-made image')
+    await this.pushImage(image)
   }
 }

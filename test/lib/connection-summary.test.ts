@@ -23,9 +23,37 @@ describe('connection-summary', () => {
     ])
   })
 
-  it('falls back to the API url when no webUrl is stored', () => {
+  it('does not show the API url as the dashboard when no webUrl is stored', () => {
     const lines = formatConnection({config: {url: 'http://1.2.3.4:3001'}, registry: null})
-    expect(lines).to.deep.equal(['Connected to', '  Dashboard  http://1.2.3.4:3001', '  API        http://1.2.3.4:3001'])
+    expect(lines).to.deep.equal([
+      'Connected to',
+      '  Dashboard  unknown (sign in again with the dashboard address: aoox login)',
+      '  API        http://1.2.3.4:3001',
+    ])
+  })
+
+  it('shows IP and panel domain when they are known', () => {
+    const lines = formatConnection({
+      config: {url: 'http://203.0.113.7:3001', webUrl: 'http://203.0.113.7:3000'},
+      panel: {
+        api: {domain: 'api.example.com', ip: 'http://203.0.113.7:3001'},
+        dashboard: {domain: 'dashboard.example.com', ip: 'http://203.0.113.7:3000'},
+      },
+      registry: null,
+    })
+    expect(lines).to.deep.equal([
+      'Connected to',
+      '  Dashboard  http://203.0.113.7:3000 - dashboard.example.com',
+      '  API        http://203.0.113.7:3001 - api.example.com',
+    ])
+  })
+
+  it('shows the registry IP and its domain', () => {
+    const lines = formatConnection({
+      config: cfg,
+      registry: {ip: 'http://203.0.113.7:5000', kind: 'found', registry: {type: 'self-hosted', url: 'registry.example.com'}},
+    })
+    expect(lines.at(-1)).to.equal('  Registry   http://203.0.113.7:5000 - registry.example.com (self-hosted)')
   })
 
   it('registry lookup failed', () => {
