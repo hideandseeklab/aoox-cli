@@ -68,12 +68,21 @@
   "oclif": {
     "bin": "aoox",
     "dirname": "aoox",
+    "helpClass": "./dist/help",
     "commands": "./dist/commands",
     "plugins": [
       "@oclif/plugin-help",
       "@oclif/plugin-plugins"
     ],
     "topicSeparator": " ",
+    "topics": {
+      "registry": {
+        "description": "Registry tools: build and push images, set the registry domain"
+      },
+      "update": {
+        "description": "Update the aoox CLI (`aoox update`) or the panel (`aoox update panel`)"
+      }
+    },
     "update": {
       "node": {
         "version": "22.11.0",

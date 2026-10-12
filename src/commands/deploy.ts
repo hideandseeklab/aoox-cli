@@ -10,6 +10,8 @@ import {connectionFlags, loadCredentials} from '../lib/flags.js'
 import {deployTag} from '../lib/git.js'
 import {imageRefFor} from '../lib/image-ref.js'
 import {readLink} from '../lib/link.js'
+import {warnIfOutdated} from '../lib/outdated.js'
+import {chooseRegistry, localhostRegistryHint} from '../lib/registry-select.js'
 
 type Config = Awaited<ReturnType<typeof loadCredentials>>
 
@@ -47,9 +49,13 @@ export default class Deploy extends Command {
       throw error
     }
 
+    await warnIfOutdated((m) => this.warn(m), this.config.version, config)
+
     const app = await this.getApplication(config, link.applicationId)
     const registry = await this.pickRegistry(config, flags.registry)
     const credentials = await api<RegistryCredentials>(config, `/registries/${registry.id}/credentials`)
+    const localHint = localhostRegistryHint(registry.url, config.url)
+    if (localHint) this.warn(localHint)
 
     const tag = flags.tag ?? deployTag(cwd)
     const imageRef = imageRefFor({appName: app.appName, projectName: app.project.name, registryUrl: registry.url, tag})
@@ -120,21 +126,9 @@ export default class Deploy extends Command {
 
   private async pickRegistry(config: Config, registryId?: string): Promise<Registry> {
     const registries = await api<Registry[]>(config, '/registries')
-    if (registryId) {
-      const found = registries.find((r) => r.id === registryId)
-      if (!found) this.error(`Registry ${registryId} not found.`)
-      return found
-    }
-
-    if (registries.length === 0) {
-      this.error('No registry in the panel yet.', {
-        suggestions: ['Provision a local registry under Infrastructure, or add an external registry.'],
-      })
-    }
-
-    const selfHosted = registries.find((r) => r.type === 'self-hosted')
-    if (selfHosted) return selfHosted
-    if (registries.length === 1) return registries[0]
+    const choice = chooseRegistry(registries, registryId)
+    if (choice.kind === 'found') return choice.registry
+    if (choice.kind === 'error') this.error(choice.message, {suggestions: choice.suggestions})
 
     if (!process.stdin.isTTY) {
       this.error('There are several registries and none is self-hosted; cannot pick one automatically.', {
@@ -143,7 +137,7 @@ export default class Deploy extends Command {
     }
 
     return select({
-      choices: registries.map((r) => ({name: `${r.name} (${r.url})`, value: r})),
+      choices: choice.registries.map((r) => ({name: `${r.name} (${r.url})`, value: r})),
       message: 'Select a registry',
     })
   }

@@ -8,6 +8,21 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING: `aoox update` now updates the CLI itself; the panel update moved to `aoox update panel`.** `aoox update panel [--apply]` is the old `aoox update` unchanged (check or apply the panel's `aoox-api`/`aoox-web` update). The new `aoox update` finds the newest version on npm (a pre-release install follows the newest of the `latest` and `alpha` tags, a stable install never moves to a pre-release), and runs `npm i -g @hideandseeklab/aoox@<version>` when the CLI was installed with npm global; for the standalone tarball or a source/npx install it prints the exact command instead of guessing. `--check` only reports; it needs neither a login nor the panel. The old muscle memory `aoox update --apply` does not update anything: it prints `Panel updates moved to: aoox update panel --apply` and exits with an error.
+- The outdated-CLI warning now says `Update it: aoox update`.
+- `aoox deploy` shares the registry selection with the new registry commands, and warns when the registry address is `localhost:…` while the panel is remote (`aoox registry domain --set <host>`).
+- Plain `aoox` also shows where the CLI is connected (see Added).
+- **`aoox login` asks for the dashboard address, not the API address.** The prompt is now "Dashboard URL" (with a hint: your panel domain, or `http://<server-IP>:3000` when no panel domain is set). The CLI reads the API address from the dashboard's public discovery file (`/.well-known/aoox.json`, needs the matching web version), so nobody has to know the API port. The scheme can be left out: a bare host is tried over https then http, and a bare IP or `localhost` also on port 3000. If the dashboard does not advertise a public API address (it says `localhost`), the CLI assumes `<same host>:3001` and says so. `--url`/`AOOX_URL` now mean the dashboard address on every command (`login`, `link`, `deploy`, `whoami`, `update`, `domain set`, `registry domain`); an API address (from an older script or config) still works and prints a one-line note. `config.json` gets an additional `webUrl`; files written by older versions keep working (their `url` is the API address). `.aoox.json` is unchanged.
+- **Clearer connection errors.** Instead of "Failed to parse URL" or "fetch failed", the CLI now says what is wrong: an https address that speaks plain HTTP ("Try http://…"), an unreachable host or timeout (check the firewall / security group, or set a panel domain: Infrastructure → Panel domain), an address that is not an aoox dashboard, and an untrusted TLS certificate. In the interactive prompt a wrong address is explained and asked again. The token is never printed.
+
+### Added
+
+- **`aoox registry build <name:version>`** builds `./Dockerfile` (`-f/--dockerfile`, `--context`) into a local image named `<registry host>/<name>:<version>` (the self-hosted registry by default, `--registry <id>` to choose). Before building it asks the registry (`HEAD /v2/<name>/manifests/<version>`, Basic or bearer-token auth) whether that version already exists and refuses unless `--force` (`latest` is always allowed), suggesting the next version. **`aoox registry push <name:version>`** pushes only an existing local image (short or full name), with the same existence check, an automatic `docker login` and a hint to use the image under New application → Ready-made image. A version is required and names are validated like the API's `imageRef`. Neither command deploys or needs `aoox link`.
+- **`aoox` without arguments shows the connection**: the dashboard and API addresses from the saved login, and the default registry (one short `GET /registries`, 2 s limit; a failure prints `(could not check: …)`), or `Not connected — run: aoox login`. `aoox --help` and `aoox <command> --help` are unchanged.
+- **Outdated CLI warning.** After `aoox login` and `whoami`, and at the start of `link`, `deploy`, `update`, `domain set` and `registry domain`, the CLI compares its version with the panel's (semver, so `alpha.9` is older than `alpha.10`) and prints a one-line warning with `npm i -g @hideandseeklab/aoox@latest`. It never fails a command; a slow or old panel is ignored.
+
 ## [0.1.0-alpha.7] - 2026-10-12
 
 ### Added

@@ -57,13 +57,11 @@ for every environment variable it accepts (pinning a version, a custom install d
 
 ## npm (Windows, Alpine, or if you already have Node.js)
 
-`aoox` is still in **alpha** — published to npm under the `alpha` dist-tag, not `latest`
-(the package has never had a stable release, so `npm install -g @hideandseeklab/aoox` without a
-tag will fail to find a version). Install explicitly with this tag:
-
 ```sh-session
-npm install -g @hideandseeklab/aoox@alpha
+npm install -g @hideandseeklab/aoox
 ```
+
+While the project is in alpha every release is published under both the `latest` and `alpha` tags, so no tag is needed. To update later, run `aoox update` (`aoox update panel` updates the panel).
 
 `aoox` is then available globally. This also applies to `aoox install` on a new VPS —
 Node ≥22 must already be installed on that VPS **before** the step above (`aoox install`
@@ -101,9 +99,12 @@ npm link            # or: npm install -g .
 * [`aoox plugins uninstall [PLUGIN]`](#aoox-plugins-uninstall-plugin)
 * [`aoox plugins unlink [PLUGIN]`](#aoox-plugins-unlink-plugin)
 * [`aoox plugins update`](#aoox-plugins-update)
+* [`aoox registry build IMAGE`](#aoox-registry-build-image)
 * [`aoox registry domain`](#aoox-registry-domain)
+* [`aoox registry push IMAGE`](#aoox-registry-push-image)
 * [`aoox reinstall`](#aoox-reinstall)
 * [`aoox update`](#aoox-update)
+* [`aoox update panel`](#aoox-update-panel)
 * [`aoox whoami`](#aoox-whoami)
 
 ## `aoox deploy`
@@ -118,7 +119,8 @@ USAGE
 FLAGS
   -f, --dockerfile=<value>  [default: Dockerfile] Path to the Dockerfile
   -t, --token=<value>       [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
-  -u, --url=<value>         [env: AOOX_URL] aoox panel URL; defaults to the value from `aoox login`
+  -u, --url=<value>         [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                            https://dashboard.example.com); defaults to the value from `aoox login`
       --context=<value>     [default: .] Docker build context
       --registry=<value>    Registry ID to push to; defaults to the self-hosted registry
       --tag=<value>         Image tag; defaults to the git short SHA (+ -dirty)
@@ -144,7 +146,8 @@ USAGE
 
 FLAGS
   -t, --token=<value>       [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
-  -u, --url=<value>         [env: AOOX_URL] aoox panel URL; defaults to the value from `aoox login`
+  -u, --url=<value>         [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                            https://dashboard.example.com); defaults to the value from `aoox login`
       --acme-email=<value>  Email for the Let's Encrypt certificate
       --api=<value>         (required) Domain for the panel API
       --web=<value>         (required) Domain for the panel dashboard
@@ -226,7 +229,8 @@ USAGE
 
 FLAGS
   -t, --token=<value>    [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
-  -u, --url=<value>      [env: AOOX_URL] aoox panel URL; defaults to the value from `aoox login`
+  -u, --url=<value>      [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                         https://dashboard.example.com); defaults to the value from `aoox login`
       --app=<value>      Application ID; skip the interactive selection
       --project=<value>  Project ID; skip the interactive selection
 
@@ -243,7 +247,7 @@ _See code: [src/commands/link.ts](https://github.com/hideandseeklab/aoox-cli/blo
 
 ## `aoox login`
 
-Save the panel URL and API token for other commands
+Save the dashboard address and API token for other commands (the API address is discovered automatically)
 
 ```
 USAGE
@@ -251,15 +255,18 @@ USAGE
 
 FLAGS
   -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
-  -u, --url=<value>    [env: AOOX_URL] aoox panel URL; defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                       https://dashboard.example.com); defaults to the value from `aoox login`
 
 DESCRIPTION
-  Save the panel URL and API token for other commands
+  Save the dashboard address and API token for other commands (the API address is discovered automatically)
 
 EXAMPLES
   $ aoox login
 
-  $ aoox login --url https://panel.example.com --token aoox_xxx
+  $ aoox login --url https://dashboard.example.com --token aoox_xxx
+
+  $ aoox login --url 203.0.113.10:3000 --token aoox_xxx
 ```
 
 _See code: [src/commands/login.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.7/src/commands/login.ts)_
@@ -554,6 +561,40 @@ DESCRIPTION
 
 _See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/5.5.2/src/commands/plugins/update.ts)_
 
+## `aoox registry build IMAGE`
+
+Build an image from a Dockerfile, named for the aoox registry (refuses a version that already exists there)
+
+```
+USAGE
+  $ aoox registry build IMAGE [-t <value>] [-u <value>] [--force] [--registry <value>] [--context <value>] [-f
+    <value>]
+
+ARGUMENTS
+  IMAGE  Image name and version, e.g. myapp:1.0.0
+
+FLAGS
+  -f, --dockerfile=<value>  [default: Dockerfile] Path to the Dockerfile
+  -t, --token=<value>       [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>         [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                            https://dashboard.example.com); defaults to the value from `aoox login`
+      --context=<value>     [default: .] Docker build context
+      --force               Overwrite a version that already exists in the registry
+      --registry=<value>    Registry ID; defaults to the self-hosted registry
+
+DESCRIPTION
+  Build an image from a Dockerfile, named for the aoox registry (refuses a version that already exists there)
+
+EXAMPLES
+  $ aoox registry build myapp:1.0.0
+
+  $ aoox registry build team/api:2.1.0 -f docker/Dockerfile --context .
+
+  $ aoox registry build myapp:1.0.0 --force
+```
+
+_See code: [src/commands/registry/build.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.7/src/commands/registry/build.ts)_
+
 ## `aoox registry domain`
 
 Set or remove the custom domain for the self-hosted registry
@@ -564,7 +605,8 @@ USAGE
 
 FLAGS
   -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
-  -u, --url=<value>    [env: AOOX_URL] aoox panel URL; defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                       https://dashboard.example.com); defaults to the value from `aoox login`
       --clear          Remove the domain, falling back to host:port
       --set=<value>    Domain for the self-hosted registry
 
@@ -578,6 +620,37 @@ EXAMPLES
 ```
 
 _See code: [src/commands/registry/domain.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.7/src/commands/registry/domain.ts)_
+
+## `aoox registry push IMAGE`
+
+Push a local image to the aoox registry (refuses a version that already exists there)
+
+```
+USAGE
+  $ aoox registry push IMAGE [-t <value>] [-u <value>] [--force] [--registry <value>]
+
+ARGUMENTS
+  IMAGE  Image name and version (short or full), e.g. myapp:1.0.0
+
+FLAGS
+  -t, --token=<value>     [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>       [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                          https://dashboard.example.com); defaults to the value from `aoox login`
+      --force             Overwrite a version that already exists in the registry
+      --registry=<value>  Registry ID; defaults to the self-hosted registry
+
+DESCRIPTION
+  Push a local image to the aoox registry (refuses a version that already exists there)
+
+EXAMPLES
+  $ aoox registry push myapp:1.0.0
+
+  $ aoox registry push registry.example.com/myapp:1.0.0
+
+  $ aoox registry push myapp:1.0.0 --force
+```
+
+_See code: [src/commands/registry/push.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.7/src/commands/registry/push.ts)_
 
 ## `aoox reinstall`
 
@@ -611,27 +684,50 @@ _See code: [src/commands/reinstall.ts](https://github.com/hideandseeklab/aoox-cl
 
 ## `aoox update`
 
-Check for or apply updates to the aoox panel itself
+Update the aoox CLI itself (use `aoox update panel` to update the panel)
 
 ```
 USAGE
-  $ aoox update [-t <value>] [-u <value>] [--apply]
+  $ aoox update [--check]
 
 FLAGS
-  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
-  -u, --url=<value>    [env: AOOX_URL] aoox panel URL; defaults to the value from `aoox login`
-      --apply          Apply the update if one is available (pull + restart)
+  --check  Only report whether a newer version exists; change nothing
 
 DESCRIPTION
-  Check for or apply updates to the aoox panel itself
+  Update the aoox CLI itself (use `aoox update panel` to update the panel)
 
 EXAMPLES
   $ aoox update
 
-  $ aoox update --apply
+  $ aoox update --check
 ```
 
 _See code: [src/commands/update.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.7/src/commands/update.ts)_
+
+## `aoox update panel`
+
+Check for or apply updates to the aoox panel itself (the aoox-api and aoox-web images)
+
+```
+USAGE
+  $ aoox update panel [-t <value>] [-u <value>] [--apply]
+
+FLAGS
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                       https://dashboard.example.com); defaults to the value from `aoox login`
+      --apply          Apply the update if one is available (pull + restart)
+
+DESCRIPTION
+  Check for or apply updates to the aoox panel itself (the aoox-api and aoox-web images)
+
+EXAMPLES
+  $ aoox update panel
+
+  $ aoox update panel --apply
+```
+
+_See code: [src/commands/update/panel.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.7/src/commands/update/panel.ts)_
 
 ## `aoox whoami`
 
@@ -643,7 +739,8 @@ USAGE
 
 FLAGS
   -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
-  -u, --url=<value>    [env: AOOX_URL] aoox panel URL; defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                       https://dashboard.example.com); defaults to the value from `aoox login`
 
 GLOBAL FLAGS
   --json  Format output as json.

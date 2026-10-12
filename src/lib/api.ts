@@ -1,5 +1,7 @@
 import type {CliConfig} from './config.js'
 
+import {explainNetworkError} from './discovery.js'
+
 /** Panel answered, but not with success. `status: 0` = never reached it. */
 export class ApiError extends Error {
   readonly body: unknown
@@ -34,7 +36,7 @@ export interface RequestOptions {
 }
 
 /** One JSON call to the panel API, with the API token as a bearer. */
-export async function api<T>(config: CliConfig, path: string, options: RequestOptions = {}): Promise<T> {
+export async function api<T>(config: Pick<CliConfig, 'token' | 'url'>, path: string, options: RequestOptions = {}): Promise<T> {
   const {body, method = 'GET', timeoutMs = 30_000} = options
   const url = `${config.url}${path}`
 
@@ -58,8 +60,7 @@ export async function api<T>(config: CliConfig, path: string, options: RequestOp
   } catch (error) {
     // fetch only rejects for transport problems (DNS, refused, TLS, timeout);
     // an HTTP error status resolves normally.
-    const reason = error instanceof Error ? error.message : String(error)
-    throw new ApiError(0, `Cannot reach the panel at ${config.url} (${reason})`)
+    throw new ApiError(0, explainNetworkError(config.url, error))
   }
 
   if (response.status === 204) return undefined as T

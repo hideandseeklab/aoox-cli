@@ -44,8 +44,10 @@ publish has to be done by hand:
    - [`.github/workflows/npm-publish.yml`](.github/workflows/npm-publish.yml): builds, runs
      `npm test`, and publishes to npm via Trusted Publishing (see the one-time setup above — no
      token needed once that's configured). The dist-tag is derived from the version's pre-release
-     label — `0.1.0-alpha.1` publishes under `alpha`, `0.2.0-beta.0` under `beta`, and a version
-     with no pre-release label (e.g. `1.0.0`) publishes under `latest`.
+     label — an alpha (`0.1.0-alpha.1`) publishes under `latest` **and** `alpha` (so a plain
+     `npm i -g @hideandseeklab/aoox` gets it; the extra `alpha` tag is a best-effort `npm dist-tag add`
+     that OIDC may refuse — run it by hand if so), `0.2.0-beta.0` under `beta` only, and a version
+     with no pre-release label (e.g. `1.0.0`) under `latest`.
    - [`.github/workflows/release-tarballs.yml`](.github/workflows/release-tarballs.yml): packs
      standalone tarballs (`oclif pack tarballs`, bundled Node.js — see the "Standalone tarball
      install" section below) for `linux-x64`/`linux-arm64`/`darwin-x64`/`darwin-arm64`, and

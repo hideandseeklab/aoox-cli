@@ -49,7 +49,7 @@ One canonical name: `aoox`.
 
 ## Configuration & credentials
 
-- `aoox login` stores `{url, token}` in `<configDir>/config.json` with mode `0600`
+- `aoox login` stores `{url, webUrl?, token}` in `<configDir>/config.json` with mode `0600`
   (`chmod` follows `writeFile` because `mode` only applies when the file is created; failure on Windows is ignored).
 - Token = **platform API token** (`aoox_…`, created in the panel under Settings → Account), not a session JWT.
   It acts as its owner user and is re-read from the DB on every request on the API side.
@@ -59,6 +59,14 @@ One canonical name: `aoox`.
 - `resolveCredentials()` (pure, unit-tested): flag/env wins per field, **except** that a
   stored token is never sent to another panel — `--url` pointing to a different host without `--token` is rejected,
   so credentials do not leak to the wrong host.
+- **`url` in config = the API base URL (what requests go to); `webUrl` = the dashboard address the user typed** (absent in files from before discovery — those keep working because their `url` already is the API).
+  **The user only types the dashboard address.** `src/lib/discovery.ts` (`discover()`, pure parts unit-tested with a fake fetch): `candidateUrls()` (no scheme → https then http; a bare IP/`localhost` without a port also `http://…:3000`),
+  then `GET <web>/.well-known/aoox.json` (aoox-web, `{apiUrl, webUrl, version}`) → `apiUrl`. If the file is missing but `<url>/auth/setup-status` answers JSON, the address is an API URL (older script/config): accepted with a one-line note.
+  A loopback `apiUrl` (PUBLIC_API_URL not configured) while the dashboard was reached on a real host → `http://<that host>:3001` + a note. Failures become human messages (`classifyFetchError`/`explainFailure`, also used by `api()` for transport errors):
+  plain HTTP behind https (Node reports `ERR_SSL_WRONG_VERSION_NUMBER` or `ECONNRESET … before secure TLS connection was established`), timeout/unreachable (firewall, "Infrastructure → Panel domain"), not an aoox dashboard, TLS certificate. Never print the token.
+  `--url`/`AOOX_URL` (and the `.aoox.json` url used by `deploy`) go through `resolveApiUrl()` in `flags.ts`: an address equal to the stored `url`/`webUrl` maps to the stored API URL with no network call, anything else is discovered; the result then goes through `resolveCredentials()` (host matching unchanged, on the **API** URL).
+  `aoox link` still writes the API URL into `.aoox.json` (works with older CLIs too).
+- **Version warning** (`src/lib/outdated.ts`, `version.ts` semver incl. pre-release): `GET /auth/me` already returns the API `version`; `login`/`whoami` reuse that response, `link`/`deploy`/`update`/`domain set`/`registry domain` make one extra best-effort call (3 s timeout, errors swallowed) and `warn()` once when the CLI is older. Never fails a command.
 - By default the token is not requested as an argument: `aoox login` prompts with masking
   (`@inquirer/prompts`), because a token on the command line ends up in shell history and the process list.
   Without a TTY (CI) the command refuses and tells you to use the flag/env.
@@ -119,7 +127,7 @@ as the web app (`src/features/**/*.entity.ts`). Every addition must be matched a
 
 ## Status & plans
 
-Already available: `aoox login`, `aoox whoami`, `aoox link`, `aoox deploy`, `aoox install`.
+Already available: `aoox login`, `aoox whoami`, `aoox link`, `aoox deploy`, `aoox install`, `aoox update` / `aoox update panel`, `aoox registry build|push|domain`.
 Next: `aoox logs` (Socket.IO `/logs` + 60-second ticket, its protocol mirrored from the API) — `aoox
 deploy` now already follows the deployment log itself via polling, so the Socket.IO-based `aoox logs` above is
 only needed for live container logs outside the context of a single deploy.
@@ -248,11 +256,38 @@ the result through the existing `sourceType: 'image'` path:
 - `--project <id>`/`--app <id>` skip interactive selection (`@inquirer/prompts` `select()`) —
   used for CI/scripting; without a TTY and without flags → a clear error, not hanging while waiting for input.
 
+## `aoox update` (CLI) vs `aoox update panel`
+
+- `src/commands/update.ts` = **the CLI updates itself** (breaking change of meaning); `src/commands/update/panel.ts` = the old panel update, unchanged (`GET /instance/update`, `--apply` → `POST /instance/update/apply`).
+  oclif v4 happily has the command `update` and the topic/command `update panel` side by side (`topicSeparator: " "`, `oclif.topics.update` gives the topic a description) — verified: `aoox update`, `aoox update panel`, `aoox update --help`.
+- Self-update (`src/lib/self-update.ts`, pure parts tested with fake documents/fetch): `GET https://registry.npmjs.org/@hideandseeklab%2faoox` (abbreviated packument; `AOOX_NPM_REGISTRY` overrides the base for tests/mirrors) → `pickNewest(doc, installed)`:
+  candidates are `dist-tags.latest` plus the installed version's own channel tag (`alpha`); a stable install drops every pre-release; versions missing from `versions` or `deprecated` are skipped; semver incl. pre-release via `version.ts`.
+  `detectInstallMethod({root, hasBundledNode})`: `bin/node`(`.exe`) inside `this.config.root` → **standalone** tarball (print `curl -fsSL https://aoox.dev/install-cli.sh | AOOX_VERSION=<v> sh`; no `@oclif/plugin-update` dependency on purpose);
+  `<prefix>/lib/node_modules/@hideandseeklab/aoox` (or a Windows drive path ending `…/node_modules/@hideandseeklab/aoox` with no other `node_modules`/`_npx` above it) → **npm-global**: run `npm i -g @hideandseeklab/aoox@<exact version>` (inherited stdio, `shell: true` only on Windows for `npm.cmd`); anything else (source checkout, npx cache, local dependency) → **other**: print the npm command and change nothing.
+  `--check` only reports. Network failure → `✖ Could not reach the npm registry (...)`, exit 1. `aoox update --apply` (hidden flag) prints `Panel updates moved to: aoox update panel --apply` and exits 1 without touching anything.
+- npm dist-tags: `.github/workflows/npm-publish.yml` publishes an alpha under `--tag latest` (npm requires the explicit tag for a pre-release) and then tries `npm dist-tag add … alpha` (`continue-on-error`: Trusted Publishing authorizes `npm publish` only). `aoox update` takes the newest of both tags, so a stale `alpha` never blocks it.
+  First install hint everywhere: `npm i -g @hideandseeklab/aoox`; upgrade hint: `aoox update`.
+
+## `aoox registry build` / `push` (`src/commands/registry/{build,push}.ts`, `src/lib/{registry-image-command,registry-check,registry-select}.ts`, `image-ref.ts`)
+
+- Both extend `RegistryImageCommand` (abstract, in `lib/`; oclif only scans `dist/commands`): parse `[host/]name:version` with `parseImageName()` (lowercase repo path components, tag `\w[\w.-]{0,127}`, no digests; bare name → `✖ A version is required` + example), pick the registry with `chooseRegistry()`
+  (explicit `--registry`, else for a full name the registry whose host matches, else self-hosted, else the only one, else prompt/`--registry`; `aoox deploy` uses the same function), `GET /registries/:id/credentials`, name = `<host>/<imagePrefix?>/<name>:<version>` (`registryHost()` strips the scheme).
+- **Existence check** (`registry-check.ts`): `HEAD /v2/<repo>/manifests/<tag>` with the manifest/index Accept types; 200 exists, 404 free; sends Basic upfront and on 401 + `WWW-Authenticate: Bearer` fetches a token (realm+service+scope, Basic credentials if any) and retries; still 401 / non-Bearer 401 → `RegistryCheckError("the registry rejected the credentials")`.
+  Base URLs mirror the API (`registryBaseUrls`): explicit scheme wins, self-hosted without domain = http, external = https; loopback/bare-IP hosts also try the other scheme. A failed check aborts with `Add --force to skip this check`. `--force` or tag `latest` skips the check entirely.
+  Exists → `✖ <name>:<version> already exists in <host>.` + `Pick a new version (e.g. <name>:<bumped>), or add --force to overwrite it.` (`suggestNextVersion()` bumps the last number of versions that start with `v?<digit>`; no suggestion otherwise). Failures print to stderr and exit 1.
+- `build` runs `docker build -t <full> -f <dockerfile> <context>` and prints `Next: aoox registry push <name:version>`. `push` first runs `docker image inspect` (missing → `✖ No local image …` + `Build it first: aoox registry build …`), then the existence check, `dockerLogin` (stdin password), `docker push`, and prints `Use it in the dashboard: New application → Ready-made image`.
+  A `localhost:…` registry with a remote panel prints a warning (`localhostRegistryHint`, also in `deploy`). Tested for real against `registry:3` with htpasswd auth (build ok / exists / `--force` / `latest` / push ok / no local image / bare name / full name for another host) behind an isolated API.
+
+## Root help: connection block (`src/help.ts`, `src/lib/connection-summary.ts`)
+
+- `oclif.helpClass` = `./dist/help` (a `Help` subclass overriding `showRootHelp`). Only when `process.argv` has no arguments (plain `aoox`) it appends `formatConnection()`; `aoox --help` and `aoox <cmd> --help` are stock.
+  Stored config only for Dashboard (`webUrl`, else the API url) and API; Registry = one `GET /registries` with a 2 s timeout via `chooseRegistry()` (never throws; `(could not check: panel unreachable|token no longer valid|HTTP n)`), `localhost` registry → "(only reachable on the server — set a domain …)". No config → `Not connected — run: aoox login`. The token is never printed.
+
 ## CI
 
 `.github/workflows/npm-publish.yml`: every `git push --follow-tags` creates a `v*` tag that triggers
 build + `npm test` + `npm publish`; the npm dist-tag is derived from the version's pre-release label
-(`0.1.0-alpha.1` → `alpha`, `1.0.0` without a label → `latest`) — see `RELEASING.md`. Authentication
+(an alpha publishes under `latest` AND `alpha`, other pre-releases under their own label, `1.0.0` under `latest` — see the `aoox update` section) — see `RELEASING.md`. Authentication
 goes through **npm Trusted Publishing (OIDC)** — `permissions.id-token: write` in the workflow, with no token
 stored at all (granular npm tokens with direct publish access are being deprecated as of
 Jan 2027). A new trusted publisher can only be registered on npmjs.com **after** the `aoox` package exists,

@@ -47,21 +47,42 @@ jobs:
       - name: Test
         run: npm test
 
-      # Publish under the dist-tag matching the version's pre-release label
-      # (0.1.0-alpha.0 -> alpha, 0.1.0-beta.2 -> beta, 1.0.0-rc.1 -> rc),
-      # or "latest" for a version with no pre-release label at all — never
-      # publish an alpha/beta build under "latest".
+      # Dist-tag policy. A stable version (1.0.0) publishes as "latest". While the
+      # project is in alpha, every alpha publishes as "latest" TOO, so a plain
+      # `npm i -g @hideandseeklab/aoox` (no tag) gets the newest alpha instead of
+      # a stale one; the "alpha" tag is kept in step (see the next step). Other
+      # pre-release labels (beta, rc) keep their own tag and never take "latest".
+      # npm needs an explicit --tag to publish a pre-release under "latest".
       - name: Derive npm dist-tag from version
         id: tag
         run: |
           VERSION=$(node -p "require('./package.json').version")
+          EXTRA=""
           if [[ "$VERSION" == *-* ]]; then
-            TAG=$(echo "$VERSION" | sed -E 's/^[^-]+-([a-zA-Z]+).*/\1/')
+            LABEL=$(echo "$VERSION" | sed -E 's/^[^-]+-([a-zA-Z]+).*/\1/')
+            if [[ "$LABEL" == "alpha" ]]; then
+              TAG="latest"
+              EXTRA="alpha"
+            else
+              TAG="$LABEL"
+            fi
           else
             TAG="latest"
           fi
-          echo "Publishing $VERSION under dist-tag $TAG"
+          echo "Publishing $VERSION under dist-tag $TAG (extra tag: ${EXTRA:-none})"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "extra=$EXTRA" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Publish
         run: npm publish --tag ${{ steps.tag.outputs.tag }}
+
+      # Trusted publishing (OIDC) authorizes `npm publish` only, so this may be
+      # refused; it is best effort. If it fails, run by hand:
+      #   npm dist-tag add @hideandseeklab/aoox@<version> alpha
+      # `aoox update` takes the newest of "latest" and "alpha", so a stale
+      # "alpha" tag never holds users back.
+      - name: Keep the alpha tag in step
+        if: steps.tag.outputs.extra != ''
+        continue-on-error: true
+        run: npm dist-tag add @hideandseeklab/aoox@${{ steps.tag.outputs.version }} ${{ steps.tag.outputs.extra }}

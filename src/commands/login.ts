@@ -1,19 +1,24 @@
 import {input, password} from '@inquirer/prompts'
 import {Command, ux} from '@oclif/core'
 
+import type {Discovered} from '../lib/discovery.js'
 import type {AuthUser} from '../lib/types.js'
 
 import {api, ApiError} from '../lib/api.js'
-import {normalizeUrl, readConfig, writeConfig} from '../lib/config.js'
+import {readConfig, writeConfig} from '../lib/config.js'
+import {discover, DiscoveryError} from '../lib/discovery.js'
 import {connectionFlags} from '../lib/flags.js'
+import {warnIfOutdated} from '../lib/outdated.js'
 
-const DEFAULT_URL = 'http://localhost:3001'
+const DEFAULT_URL = 'http://localhost:3000'
 
 export default class Login extends Command {
-  static description = 'Save the panel URL and API token for other commands'
+  static description =
+    'Save the dashboard address and API token for other commands (the API address is discovered automatically)'
   static examples = [
     '<%= config.bin %> <%= command.id %>',
-    '<%= config.bin %> <%= command.id %> --url https://panel.example.com --token aoox_xxx',
+    '<%= config.bin %> <%= command.id %> --url https://dashboard.example.com --token aoox_xxx',
+    '<%= config.bin %> <%= command.id %> --url 203.0.113.10:3000 --token aoox_xxx',
   ]
   static flags = {...connectionFlags}
 
@@ -28,18 +33,57 @@ export default class Login extends Command {
       })
     }
 
-    const url = normalizeUrl(
-      flags.url ?? (await input({default: existing?.url ?? DEFAULT_URL, message: 'Panel URL'})),
-    )
+    const found = flags.url ? await this.discoverOrFail(flags.url) : await this.promptForDashboard(existing?.webUrl)
+    for (const note of found.notes) this.log(note)
+
     // Prompted rather than taken as an argument by default: a token on the
     // command line ends up in shell history and in the process list.
     const token = (flags.token ?? (await password({mask: '*', message: 'API token (aoox_…)'}))).trim()
 
-    const user = await this.verify({token, url})
-    const path = await writeConfig(this.config.configDir, {token, url})
+    const user = await this.verify({token, url: found.apiUrl})
+    const path = await writeConfig(this.config.configDir, {
+      token,
+      url: found.apiUrl,
+      ...(found.webUrl ? {webUrl: found.webUrl} : {}),
+    })
 
-    this.log(`Logged in as ${user.email} (${user.role}) at ${url}`)
+    this.log(`Logged in as ${user.email} (${user.role}) at ${found.webUrl ?? found.apiUrl}`)
     this.log(`Token saved to ${path}`)
+    await warnIfOutdated((m) => this.warn(m), this.config.version, {token, url: found.apiUrl}, user.version)
+  }
+
+  private async discoverOrFail(raw: string): Promise<Discovered> {
+    ux.action.start('Looking for the panel')
+    try {
+      const found = await discover(raw)
+      ux.action.stop('ok')
+      return found
+    } catch (error) {
+      ux.action.stop('failed')
+      if (error instanceof DiscoveryError) this.error(error.message)
+      throw error
+    }
+  }
+
+  private async promptForDashboard(previous?: string): Promise<Discovered> {
+    this.log('Use the address you open the dashboard with: your panel domain (e.g. https://dashboard.example.com),')
+    this.log('or http://<server-IP>:3000 if no panel domain is set yet.')
+    // A wrong address is the commonest mistake; explain it and ask again instead of exiting.
+    for (;;) {
+      // eslint-disable-next-line no-await-in-loop
+      const raw = await input({default: previous ?? DEFAULT_URL, message: 'Dashboard URL'})
+      try {
+        ux.action.start('Looking for the panel')
+        // eslint-disable-next-line no-await-in-loop
+        const found = await discover(raw)
+        ux.action.stop('ok')
+        return found
+      } catch (error) {
+        ux.action.stop('failed')
+        if (!(error instanceof DiscoveryError)) throw error
+        this.log(error.message)
+      }
+    }
   }
 
   /** Never store a credential that does not work — check it first. */
@@ -60,6 +104,7 @@ export default class Login extends Command {
         })
       }
 
+      if (error instanceof ApiError && error.status === 0) this.error(error.message)
       throw error
     }
   }

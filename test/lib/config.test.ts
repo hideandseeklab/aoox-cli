@@ -1,6 +1,9 @@
 import {expect} from 'chai'
+import {mkdtemp, writeFile} from 'node:fs/promises'
+import {tmpdir} from 'node:os'
+import {join} from 'node:path'
 
-import {MissingCredentialsError, normalizeUrl, resolveCredentials} from '../../src/lib/config.js'
+import {MissingCredentialsError, normalizeUrl, readConfig, resolveCredentials} from '../../src/lib/config.js'
 
 describe('config lib', () => {
   describe('normalizeUrl', () => {
@@ -48,6 +51,19 @@ describe('config lib', () => {
         MissingCredentialsError,
         /API token/,
       )
+    })
+  })
+
+  describe('readConfig', () => {
+    it('reads an old file (API url only) and a new one with webUrl', async () => {
+      const dir = await mkdtemp(join(tmpdir(), 'aoox-cfg-'))
+      await writeFile(join(dir, 'config.json'), JSON.stringify({token: 'aoox_a', url: 'http://localhost:3001/'}))
+      expect(await readConfig(dir)).to.deep.equal({token: 'aoox_a', url: 'http://localhost:3001'})
+      await writeFile(
+        join(dir, 'config.json'),
+        JSON.stringify({token: 'aoox_a', url: 'https://api.x.test', webUrl: 'https://x.test/'}),
+      )
+      expect(await readConfig(dir)).to.deep.equal({token: 'aoox_a', url: 'https://api.x.test', webUrl: 'https://x.test'})
     })
   })
 })

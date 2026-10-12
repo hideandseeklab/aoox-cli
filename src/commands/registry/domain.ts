@@ -5,6 +5,7 @@ import type {Registry} from '../../lib/types.js'
 import {api, ApiError} from '../../lib/api.js'
 import {MissingCredentialsError} from '../../lib/config.js'
 import {connectionFlags, loadCredentials} from '../../lib/flags.js'
+import {warnIfOutdated} from '../../lib/outdated.js'
 
 /**
  * Puts the self-hosted registry behind the built-in proxy on its own domain
@@ -41,6 +42,8 @@ static flags = {
 
       throw error
     }
+
+    await warnIfOutdated((m) => this.warn(m), this.config.version, config)
 
     const registries = await api<Registry[]>(config, '/registries')
     const registry = registries.find((r) => r.type === 'self-hosted')

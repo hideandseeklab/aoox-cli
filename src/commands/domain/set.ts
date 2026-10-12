@@ -3,6 +3,7 @@ import {Command, Flags} from '@oclif/core'
 import {api, ApiError} from '../../lib/api.js'
 import {MissingCredentialsError} from '../../lib/config.js'
 import {connectionFlags, loadCredentials} from '../../lib/flags.js'
+import {warnIfOutdated} from '../../lib/outdated.js'
 
 interface PanelDomainSettings {
   acmeEmail: null | string
@@ -48,6 +49,8 @@ static flags = {
 
       throw error
     }
+
+    await warnIfOutdated((m) => this.warn(m), this.config.version, config)
 
     let result: UpdatePanelDomainResult
     try {

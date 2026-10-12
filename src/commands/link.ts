@@ -7,6 +7,7 @@ import {api, ApiError} from '../lib/api.js'
 import {MissingCredentialsError} from '../lib/config.js'
 import {connectionFlags, loadCredentials} from '../lib/flags.js'
 import {writeLink} from '../lib/link.js'
+import {warnIfOutdated} from '../lib/outdated.js'
 
 export default class Link extends Command {
   static description = 'Link this folder to an application in the panel (used by `aoox deploy`/`aoox logs`)'
@@ -47,6 +48,7 @@ export default class Link extends Command {
 
     this.log(`Linked: ${project.name} / ${application.name} (${application.appName})`)
     this.log(`Written to ${path} — safe to commit, contains no secrets.`)
+    await warnIfOutdated((m) => this.warn(m), this.config.version, config)
   }
 
   private async pickApplication(

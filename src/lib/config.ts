@@ -4,10 +4,14 @@ import {dirname, join} from 'node:path'
 /**
  * What `aoox login` stores. The token is a platform API token (`aoox_…`)
  * created in the panel under Settings → Account; it acts as its owner.
+ * `url` is always the **API** base URL (what requests go to; files written
+ * by older versions hold exactly this). `webUrl` is the dashboard address
+ * the user logged in with — absent in old files.
  */
 export interface CliConfig {
   token: string
   url: string
+  webUrl?: string
 }
 
 export const CONFIG_FILE = 'config.json'
@@ -35,7 +39,11 @@ export async function readConfig(configDir: string): Promise<CliConfig | null> {
   try {
     const parsed = JSON.parse(raw) as Partial<CliConfig>
     if (!parsed.url || !parsed.token) return null
-    return {token: parsed.token, url: normalizeUrl(parsed.url)}
+    return {
+      token: parsed.token,
+      url: normalizeUrl(parsed.url),
+      ...(parsed.webUrl ? {webUrl: normalizeUrl(parsed.webUrl)} : {}),
+    }
   } catch {
     throw new Error(`Config is corrupt (not valid JSON): ${path}`)
   }

@@ -5,6 +5,7 @@ import type {AuthUser} from '../lib/types.js'
 import {api, ApiError} from '../lib/api.js'
 import {MissingCredentialsError} from '../lib/config.js'
 import {connectionFlags, loadCredentials} from '../lib/flags.js'
+import {warnIfOutdated} from '../lib/outdated.js'
 
 export interface WhoamiResult extends AuthUser {
   url: string
@@ -44,6 +45,8 @@ export default class Whoami extends Command {
     // Muted automatically when --json is set, so the JSON output stays clean.
     this.log(`${user.email} · ${user.role}${user.name ? ` · ${user.name}` : ''}`)
     this.log(`Panel: ${config.url}`)
+
+    await warnIfOutdated((m) => this.warn(m), this.config.version, config, user.version)
 
     return {...user, url: config.url}
   }

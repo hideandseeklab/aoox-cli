@@ -11,6 +11,8 @@ export interface AuthUser {
   name: null | string
   role: string
   twoFactorEnabled: boolean
+  /** Running API version; absent on panels older than this field. */
+  version?: string
 }
 
 /** `GET /projects` (fields this CLI uses; the DTO carries more). */
