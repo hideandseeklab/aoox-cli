@@ -265,7 +265,7 @@ the result through the existing `sourceType: 'image'` path:
   `detectInstallMethod({root, hasBundledNode})`: `bin/node`(`.exe`) inside `this.config.root` → **standalone** tarball (print `curl -fsSL https://aoox.dev/install-cli.sh | AOOX_VERSION=<v> sh`; no `@oclif/plugin-update` dependency on purpose);
   `<prefix>/lib/node_modules/@hideandseeklab/aoox` (or a Windows drive path ending `…/node_modules/@hideandseeklab/aoox` with no other `node_modules`/`_npx` above it) → **npm-global**: run `npm i -g @hideandseeklab/aoox@<exact version>` (inherited stdio, `shell: true` only on Windows for `npm.cmd`); anything else (source checkout, npx cache, local dependency) → **other**: print the npm command and change nothing.
   `--check` only reports. Network failure → `✖ Could not reach the npm registry (...)`, exit 1. `aoox update --apply` (hidden flag) prints `Panel updates moved to: aoox update panel --apply` and exits 1 without touching anything.
-- npm dist-tags: `.github/workflows/npm-publish.yml` publishes an alpha under `--tag latest` (npm requires the explicit tag for a pre-release) and then tries `npm dist-tag add … alpha` (`continue-on-error`: Trusted Publishing authorizes `npm publish` only). `aoox update` takes the newest of both tags, so a stale `alpha` never blocks it.
+- npm dist-tags: `.github/workflows/npm-publish.yml` publishes an alpha under `--tag latest` (npm requires the explicit tag for a pre-release); `latest` is the only tag in use. There is no `alpha` tag any more (removed 2026-10-12): Trusted Publishing authorizes `npm publish` only, so a second tag could not be moved and went stale (alpha.8 shipped with `alpha` still on alpha.7). `pickNewest` still reads a channel tag if one exists, so an old one never blocks `aoox update`.
   First install hint everywhere: `npm i -g @hideandseeklab/aoox`; upgrade hint: `aoox update`.
 
 ## `aoox registry build` / `push` (`src/commands/registry/{build,push}.ts`, `src/lib/{registry-image-command,registry-check,registry-select}.ts`, `image-ref.ts`)
@@ -287,7 +287,7 @@ the result through the existing `sourceType: 'image'` path:
 
 `.github/workflows/npm-publish.yml`: every `git push --follow-tags` creates a `v*` tag that triggers
 build + `npm test` + `npm publish`; the npm dist-tag is derived from the version's pre-release label
-(an alpha publishes under `latest` AND `alpha`, other pre-releases under their own label, `1.0.0` under `latest` — see the `aoox update` section) — see `RELEASING.md`. Authentication
+(an alpha publishes under `latest` only, other pre-releases under their own label, `1.0.0` under `latest` — see the `aoox update` section) — see `RELEASING.md`. Authentication
 goes through **npm Trusted Publishing (OIDC)** — `permissions.id-token: write` in the workflow, with no token
 stored at all (granular npm tokens with direct publish access are being deprecated as of
 Jan 2027). A new trusted publisher can only be registered on npmjs.com **after** the `aoox` package exists,

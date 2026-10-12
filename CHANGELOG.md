@@ -8,6 +8,10 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+### Changed
+
+- **One npm tag: `latest`.** Releases publish under `latest` only; the publish workflow no longer tries to move an `alpha` tag (npm Trusted Publishing cannot move tags, so `alpha` was left behind on 0.1.0-alpha.7 while `latest` got 0.1.0-alpha.8). Install with `npm i -g @hideandseeklab/aoox` and upgrade with `aoox update`.
+
 ## [0.1.0-alpha.8] - 2026-10-12
 
 ### Changed

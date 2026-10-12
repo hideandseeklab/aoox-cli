@@ -13,7 +13,7 @@ publish has to be done by hand:
    allow publishing at all (Account Settings → Two-Factor Authentication on npmjs.com) — if it's
    off, publish fails with a 403, not a prompt to turn it on. Once 2FA is on, pass a fresh code:
    ```bash
-   npm publish --tag alpha --otp=123456
+   npm publish --tag latest --otp=123456
    ```
    The package is scoped (`@hideandseeklab/aoox`) and `publishConfig.access` in `package.json` is
    already set to `public`, so no `--access=public` flag is needed.
@@ -44,10 +44,10 @@ publish has to be done by hand:
    - [`.github/workflows/npm-publish.yml`](.github/workflows/npm-publish.yml): builds, runs
      `npm test`, and publishes to npm via Trusted Publishing (see the one-time setup above — no
      token needed once that's configured). The dist-tag is derived from the version's pre-release
-     label — an alpha (`0.1.0-alpha.1`) publishes under `latest` **and** `alpha` (so a plain
-     `npm i -g @hideandseeklab/aoox` gets it; the extra `alpha` tag is a best-effort `npm dist-tag add`
-     that OIDC may refuse — run it by hand if so), `0.2.0-beta.0` under `beta` only, and a version
-     with no pre-release label (e.g. `1.0.0`) under `latest`.
+     label — an alpha (`0.1.0-alpha.1`) publishes under `latest`, the only tag we use (so a plain
+     `npm i -g @hideandseeklab/aoox` gets it; there is no `alpha` tag, because Trusted Publishing
+     may publish but not move tags and a second tag would go stale), `0.2.0-beta.0` under `beta`
+     only, and a version with no pre-release label (e.g. `1.0.0`) under `latest`.
    - [`.github/workflows/release-tarballs.yml`](.github/workflows/release-tarballs.yml): packs
      standalone tarballs (`oclif pack tarballs`, bundled Node.js — see the "Standalone tarball
      install" section below) for `linux-x64`/`linux-arm64`/`darwin-x64`/`darwin-arm64`, and
@@ -59,8 +59,8 @@ publish has to be done by hand:
    Watch both run under the repo's **Actions** tab.
 5. Once the workflows finish, sanity-check both outputs:
    ```bash
-   npm view @hideandseeklab/aoox@alpha version
-   npx -p @hideandseeklab/aoox@alpha aoox --version
+   npm view @hideandseeklab/aoox@latest version
+   npx -p @hideandseeklab/aoox@latest aoox --version
    ```
    and open the new release under **Releases** — it should already have 32 assets (4 platforms ×
    2 formats `.tar.gz`/`.tar.xz` × 2 names each: oclif's original versioned+sha filename and the
@@ -92,7 +92,7 @@ bundled at publish time, not a live fetch from `aoox-api`. See `assets/install/R
 
 `postversion` only runs on a *version change* — `npm version` refuses to re-set the version already
 in `package.json`. This repo's first publish is already manual anyway (see "One-time setup" above),
-so just run the manual `npm publish --tag alpha` there and skip `npm version` for that one.
+so just run the manual `npm publish --tag latest` there and skip `npm version` for that one.
 
 ## If something needs a same-day fix after a release
 
