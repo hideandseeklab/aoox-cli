@@ -69,3 +69,59 @@ export interface Deployment {
   logs: string
   status: DeploymentStatus
 }
+
+/** An application or stack that uses an environment (`GET /projects/:id/environments`). */
+export interface EnvironmentUser {
+  id: string
+  kind: 'application' | 'compose'
+  name: string
+}
+
+/** `GET /projects/:id/environments` (names and variable names only, never values). */
+export interface ProjectEnvironment {
+  id: string
+  keys: string[]
+  name: string
+  /** Variables explicitly flagged not secret (absent on older panels). */
+  plainKeys?: string[]
+  protected: boolean
+  /** Variables flagged secret (absent on older panels). */
+  secretKeys?: string[]
+  updatedAt: string
+  usedBy: EnvironmentUser[]
+}
+
+/** `POST /projects/:id/environments/:envId/reveal` (audited). */
+export interface EnvironmentReveal {
+  keys: string[]
+  plainKeys?: string[]
+  secretKeys?: string[]
+  /** Version for optimistic concurrency; absent on panels older than this field. */
+  updatedAt?: string
+  variables: string
+}
+
+/** One entry of `GET /projects/:id/environments/:envId/versions` (names only). */
+export interface EnvironmentVersion {
+  action: string
+  authorEmail: null | string
+  createdAt: string
+  current: boolean
+  detail: null | string
+  id: string
+  summary: {added: string[]; changed: string[]; flags: string[]; removed: string[]}
+  via: string
+}
+
+/** `GET /projects/:id/environments/diff?from=&to=` (names only, never values). */
+export interface EnvironmentDiff {
+  comparable: boolean
+  /** Null when the caller may not reveal both sides. */
+  different: null | string[]
+  from: {id: string; name: string}
+  inBoth: string[]
+  onlyInFrom: string[]
+  onlyInTo: string[]
+  same: null | string[]
+  to: {id: string; name: string}
+}

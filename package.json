@@ -76,6 +76,9 @@
     ],
     "topicSeparator": " ",
     "topics": {
+      "env": {
+        "description": "Project environment variables: list, pull, set and unset (run a command with them: `aoox run`)"
+      },
       "registry": {
         "description": "Registry tools: build and push images, set the registry domain"
       },

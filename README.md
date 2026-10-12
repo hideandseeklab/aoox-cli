@@ -85,6 +85,10 @@ npm link            # or: npm install -g .
 <!-- commands -->
 * [`aoox deploy`](#aoox-deploy)
 * [`aoox domain set`](#aoox-domain-set)
+* [`aoox env list`](#aoox-env-list)
+* [`aoox env pull`](#aoox-env-pull)
+* [`aoox env set ASSIGNMENTS`](#aoox-env-set-assignments)
+* [`aoox env unset KEYS`](#aoox-env-unset-keys)
 * [`aoox help [COMMAND]`](#aoox-help-command)
 * [`aoox install`](#aoox-install)
 * [`aoox link`](#aoox-link)
@@ -103,6 +107,7 @@ npm link            # or: npm install -g .
 * [`aoox registry domain`](#aoox-registry-domain)
 * [`aoox registry push IMAGE`](#aoox-registry-push-image)
 * [`aoox reinstall`](#aoox-reinstall)
+* [`aoox run`](#aoox-run)
 * [`aoox update`](#aoox-update)
 * [`aoox update panel`](#aoox-update-panel)
 * [`aoox whoami`](#aoox-whoami)
@@ -162,6 +167,129 @@ EXAMPLES
 ```
 
 _See code: [src/commands/domain/set.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.8/src/commands/domain/set.ts)_
+
+## `aoox env list`
+
+List the project environments, or (with --env) the variable names of one. Values are masked unless --reveal is given
+
+```
+USAGE
+  $ aoox env list [--json] [-t <value>] [-u <value>] [--project <value>] [-e <value>] [--reveal]
+
+FLAGS
+  -e, --env=<value>      Environment name; without it the environments of the project are listed
+  -t, --token=<value>    [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>      [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                         https://dashboard.example.com); defaults to the value from `aoox login`
+      --project=<value>  Project ID or name; defaults to the project of the application linked with `aoox link`
+      --reveal           Show the values (needs --env; the read is recorded in the audit log)
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  List the project environments, or (with --env) the variable names of one. Values are masked unless --reveal is given
+
+EXAMPLES
+  $ aoox env list
+
+  $ aoox env list --env staging
+
+  $ aoox env list --env development --reveal
+```
+
+_See code: [src/commands/env/list.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.8/src/commands/env/list.ts)_
+
+## `aoox env pull`
+
+Write the variables of an environment to a local file (mode 0600). Refuses to overwrite unless --force. The read is recorded in the audit log
+
+```
+USAGE
+  $ aoox env pull [-t <value>] [-u <value>] [--project <value>] [-e <value>] [--file <value>] [--force]
+
+FLAGS
+  -e, --env=<value>      [default: development] Environment name (development, staging, production, or a custom one)
+  -t, --token=<value>    [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>      [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                         https://dashboard.example.com); defaults to the value from `aoox login`
+      --file=<value>     [default: .env] File to write, relative to the current folder
+      --force            Overwrite the file if it exists
+      --project=<value>  Project ID or name; defaults to the project of the application linked with `aoox link`
+
+DESCRIPTION
+  Write the variables of an environment to a local file (mode 0600). Refuses to overwrite unless --force. The read is
+  recorded in the audit log
+
+EXAMPLES
+  $ aoox env pull
+
+  $ aoox env pull --env staging --file .env.staging
+
+  $ aoox env pull --force
+```
+
+_See code: [src/commands/env/pull.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.8/src/commands/env/pull.ts)_
+
+## `aoox env set ASSIGNMENTS`
+
+Set one or more variables in an environment. Existing comments and order are kept; the write fails if someone else changed the environment in between
+
+```
+USAGE
+  $ aoox env set ASSIGNMENTS... [-t <value>] [-u <value>] [--project <value>] [-e <value>]
+
+ARGUMENTS
+  ASSIGNMENTS...  KEY=VALUE (the value is stored exactly as given)
+
+FLAGS
+  -e, --env=<value>      [default: development] Environment name (development, staging, production, or a custom one)
+  -t, --token=<value>    [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>      [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                         https://dashboard.example.com); defaults to the value from `aoox login`
+      --project=<value>  Project ID or name; defaults to the project of the application linked with `aoox link`
+
+DESCRIPTION
+  Set one or more variables in an environment. Existing comments and order are kept; the write fails if someone else
+  changed the environment in between
+
+EXAMPLES
+  $ aoox env set API_URL=https://api.example.com
+
+  $ aoox env set GREETING="hello world" QUERY=a=b --env staging
+```
+
+_See code: [src/commands/env/set.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.8/src/commands/env/set.ts)_
+
+## `aoox env unset KEYS`
+
+Remove one or more variables from an environment. Comments and the other variables are kept; the write fails if someone else changed the environment in between
+
+```
+USAGE
+  $ aoox env unset KEYS... [-t <value>] [-u <value>] [--project <value>] [-e <value>]
+
+ARGUMENTS
+  KEYS...  Variable name(s) to remove
+
+FLAGS
+  -e, --env=<value>      [default: development] Environment name (development, staging, production, or a custom one)
+  -t, --token=<value>    [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>      [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                         https://dashboard.example.com); defaults to the value from `aoox login`
+      --project=<value>  Project ID or name; defaults to the project of the application linked with `aoox link`
+
+DESCRIPTION
+  Remove one or more variables from an environment. Comments and the other variables are kept; the write fails if
+  someone else changed the environment in between
+
+EXAMPLES
+  $ aoox env unset OLD_KEY
+
+  $ aoox env unset A B --env staging
+```
+
+_See code: [src/commands/env/unset.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.8/src/commands/env/unset.ts)_
 
 ## `aoox help [COMMAND]`
 
@@ -568,7 +696,7 @@ Build an image from a Dockerfile, named for the aoox registry (refuses a version
 ```
 USAGE
   $ aoox registry build IMAGE [-t <value>] [-u <value>] [--force] [--registry <value>] [--context <value>] [-f
-    <value>]
+    <value>] [--push]
 
 ARGUMENTS
   IMAGE  Image name and version, e.g. myapp:1.0.0
@@ -580,6 +708,7 @@ FLAGS
                             https://dashboard.example.com); defaults to the value from `aoox login`
       --context=<value>     [default: .] Docker build context
       --force               Overwrite a version that already exists in the registry
+      --push                Push the image to the registry right after the build
       --registry=<value>    Registry ID; defaults to the self-hosted registry
 
 DESCRIPTION
@@ -587,6 +716,8 @@ DESCRIPTION
 
 EXAMPLES
   $ aoox registry build myapp:1.0.0
+
+  $ aoox registry build myapp:1.0.0 --push
 
   $ aoox registry build team/api:2.1.0 -f docker/Dockerfile --context .
 
@@ -681,6 +812,33 @@ EXAMPLES
 ```
 
 _See code: [src/commands/reinstall.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.8/src/commands/reinstall.ts)_
+
+## `aoox run`
+
+Run a command with the variables of an environment, without writing them to disk. Put the command after `--`; its exit code is forwarded. The read is recorded in the audit log
+
+```
+USAGE
+  $ aoox run [-t <value>] [-u <value>] [--project <value>] [-e <value>]
+
+FLAGS
+  -e, --env=<value>      [default: development] Environment name (development, staging, production, or a custom one)
+  -t, --token=<value>    [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>      [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                         https://dashboard.example.com); defaults to the value from `aoox login`
+      --project=<value>  Project ID or name; defaults to the project of the application linked with `aoox link`
+
+DESCRIPTION
+  Run a command with the variables of an environment, without writing them to disk. Put the command after `--`; its exit
+  code is forwarded. The read is recorded in the audit log
+
+EXAMPLES
+  $ aoox run -- npm run dev
+
+  $ aoox run --env staging -- node server.js
+```
+
+_See code: [src/commands/run.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.8/src/commands/run.ts)_
 
 ## `aoox update`
 
