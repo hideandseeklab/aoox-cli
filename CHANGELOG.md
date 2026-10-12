@@ -8,6 +8,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+## [0.1.0-alpha.8] - 2026-10-12
+
 ### Changed
 
 - **BREAKING: `aoox update` now updates the CLI itself; the panel update moved to `aoox update panel`.** `aoox update panel [--apply]` is the old `aoox update` unchanged (check or apply the panel's `aoox-api`/`aoox-web` update). The new `aoox update` finds the newest version on npm (a pre-release install follows the newest of the `latest` and `alpha` tags, a stable install never moves to a pre-release), and runs `npm i -g @hideandseeklab/aoox@<version>` when the CLI was installed with npm global; for the standalone tarball or a source/npx install it prints the exact command instead of guessing. `--check` only reports; it needs neither a login nor the panel. The old muscle memory `aoox update --apply` does not update anything: it prints `Panel updates moved to: aoox update panel --apply` and exits with an error.
@@ -163,7 +165,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 - `aoox install` — bootstrap aoox (postgres + api + web) on a fresh VPS via Docker Compose.
 - `aoox whoami` — show the account and panel currently in use.
 
-[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.7...HEAD
+[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.8...HEAD
+[0.1.0-alpha.8]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.7...v0.1.0-alpha.8
 [0.1.0-alpha.7]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.6...v0.1.0-alpha.7
 [0.1.0-alpha.5]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.4...v0.1.0-alpha.5
 [0.1.0-alpha.4]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.3...v0.1.0-alpha.4
