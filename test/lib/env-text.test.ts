@@ -45,7 +45,7 @@ describe('env-text', () => {
 
     it('hasReferences finds ${{...}} in values only', () => {
        
-      expect(hasReferences('A=${{project.B}}')).to.equal(true)
+      expect(hasReferences('A=${{vars.B}}')).to.equal(true)
       expect(hasReferences('A=1')).to.equal(false)
     })
   })
@@ -140,7 +140,7 @@ describe('env-text', () => {
     })
 
     it('round-trips awkward values through set, parse and the record', () => {
-      const awkward = ['plain', 'has space', 'a=b=c', 'say "hi"', "it's", 'x # y', '$HOME', String.raw`\n`, '', ' lead', '${{project.X}}']
+      const awkward = ['plain', 'has space', 'a=b=c', 'say "hi"', "it's", 'x # y', '$HOME', String.raw`\n`, '', ' lead', '${{vars.X}}']
       const pairs = awkward.map((v, i) => [`K${i}`, v] as [string, string])
       const {text} = setVariables('', pairs)
       expect(parseEnvLines(text)).to.deep.equal(pairs)

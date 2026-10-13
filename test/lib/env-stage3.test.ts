@@ -19,9 +19,9 @@ import {
 describe('env stage 3', () => {
   describe('checkEnvFile (push)', () => {
     it('accepts comments, blanks, = in values and ${{}} references; normalises CRLF, BOM and trailing blank lines', () => {
-      const r = checkEnvFile('\uFEFF# c\r\nA=1\r\n\r\nURL=a=b\r\nREF=${{project.A}}\r\n\r\n\r\n')
+      const r = checkEnvFile('\uFEFF# c\r\nA=1\r\n\r\nURL=a=b\r\nREF=${{vars.A}}\r\n\r\n\r\n')
       expect(r.problems).to.deep.equal([])
-      expect(r.text).to.equal('# c\nA=1\n\nURL=a=b\nREF=${{project.A}}')
+      expect(r.text).to.equal('# c\nA=1\n\nURL=a=b\nREF=${{vars.A}}')
     })
 
     it('names every bad line: no =, export prefix, invalid name, trailing whitespace, duplicates', () => {

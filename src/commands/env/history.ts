@@ -3,17 +3,19 @@ import {Flags} from '@oclif/core'
 import type {EnvironmentVersion} from '../../lib/types.js'
 
 import {api} from '../../lib/api.js'
-import {EnvCommand, environmentFlag, projectFlags} from '../../lib/env-command.js'
+import {EnvCommand, environmentCommandFlags} from '../../lib/env-command.js'
 import {describeSummary} from '../../lib/env-plan.js'
 
 export default class EnvHistory extends EnvCommand {
   static description =
-    'Show the version history of an environment: when, who, and which variable names were added (+), changed (~) or removed (-). Values are never shown'
+    'Show the version history of a variable set environment: when, who, and which variable names were added (+), changed (~) or removed (-). Values are never shown'
   static enableJsonFlag = true
-  static examples = ['<%= config.bin %> <%= command.id %> --env production', '<%= config.bin %> <%= command.id %> --limit 5 --json']
+  static examples = [
+    '<%= config.bin %> <%= command.id %> --set shared --env production',
+    '<%= config.bin %> <%= command.id %> --limit 5 --json',
+  ]
   static flags = {
-    ...projectFlags,
-    ...environmentFlag,
+    ...environmentCommandFlags,
     limit: Flags.integer({default: 20, description: 'How many versions to show (newest first)', min: 1}),
   }
 
@@ -24,13 +26,13 @@ export default class EnvHistory extends EnvCommand {
     try {
       versions = await api<EnvironmentVersion[]>(
         resolved.config,
-        `/projects/${resolved.projectId}/environments/${resolved.environment.id}/versions`,
+        `/variable-sets/${resolved.set.id}/environments/${resolved.environment.id}/versions`,
       )
     } catch (error) {
-      return this.failFromApi(error, {environment: resolved.environment.name})
+      return this.failFromApi(error, {environment: resolved.label})
     }
 
-    this.log(`Project: ${resolved.projectName} · environment: ${resolved.environment.name}`)
+    this.log(`Environment: ${resolved.label}`)
     if (versions.length === 0) {
       this.log('No versions yet: the first change creates one.')
       return []

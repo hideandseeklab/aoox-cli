@@ -101,13 +101,17 @@ npm link            # or: npm install -g .
 <!-- commands -->
 * [`aoox deploy`](#aoox-deploy)
 * [`aoox domain set`](#aoox-domain-set)
-* [`aoox env diff FROM TO`](#aoox-env-diff-from-to)
+* [`aoox env diff`](#aoox-env-diff)
 * [`aoox env history`](#aoox-env-history)
+* [`aoox env link`](#aoox-env-link)
+* [`aoox env links`](#aoox-env-links)
 * [`aoox env list`](#aoox-env-list)
-* [`aoox env promote FROM TO`](#aoox-env-promote-from-to)
+* [`aoox env promote`](#aoox-env-promote)
 * [`aoox env pull`](#aoox-env-pull)
 * [`aoox env push`](#aoox-env-push)
 * [`aoox env set ASSIGNMENTS`](#aoox-env-set-assignments)
+* [`aoox env sets`](#aoox-env-sets)
+* [`aoox env unlink`](#aoox-env-unlink)
 * [`aoox env unset KEYS`](#aoox-env-unset-keys)
 * [`aoox help [COMMAND]`](#aoox-help-command)
 * [`aoox install`](#aoox-install)
@@ -188,163 +192,250 @@ EXAMPLES
 
 _See code: [src/commands/domain/set.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.9/src/commands/domain/set.ts)_
 
-## `aoox env diff FROM TO`
+## `aoox env diff`
 
-Compare two environments key by key: which variables exist on one side only and which have different values. Prints names only, never values
+Compare two environments of a variable set key by key: which variables exist on one side only and which have different values. Prints names only, never values
 
 ```
 USAGE
-  $ aoox env diff FROM TO [--json] [-t <value>] [-u <value>] [--project <value>]
-
-ARGUMENTS
-  FROM  Environment to compare from
-  TO    Environment to compare to
+  $ aoox env diff --from <value> --to <value> [--json] [-t <value>] [-u <value>] [--stack <value> | --app
+    <value>] [-s <value>]
 
 FLAGS
-  -t, --token=<value>    [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
-  -u, --url=<value>      [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
-                         https://dashboard.example.com); defaults to the value from `aoox login`
-      --project=<value>  Project ID or name; defaults to the project of the application linked with `aoox link`
+  -s, --set=<value>    Variable set slug (or name). Default: the only set the linked application links, or the only set
+                       you can see
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                       https://dashboard.example.com); defaults to the value from `aoox login`
+      --app=<value>    Application ID; defaults to the application linked with `aoox link`
+      --from=<value>   (required) Environment to compare from
+      --stack=<value>  Compose stack ID, instead of an application
+      --to=<value>     (required) Environment to compare to
 
 GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  Compare two environments key by key: which variables exist on one side only and which have different values. Prints
-  names only, never values
+  Compare two environments of a variable set key by key: which variables exist on one side only and which have different
+  values. Prints names only, never values
 
 EXAMPLES
-  $ aoox env diff staging production
+  $ aoox env diff --set shared --from staging --to production
 ```
 
 _See code: [src/commands/env/diff.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.9/src/commands/env/diff.ts)_
 
 ## `aoox env history`
 
-Show the version history of an environment: when, who, and which variable names were added (+), changed (~) or removed (-). Values are never shown
+Show the version history of a variable set environment: when, who, and which variable names were added (+), changed (~) or removed (-). Values are never shown
 
 ```
 USAGE
-  $ aoox env history [--json] [-t <value>] [-u <value>] [--project <value>] [-e <value>] [--limit <value>]
+  $ aoox env history [--json] [-t <value>] [-u <value>] [--stack <value> | --app <value>] [-e <value>] [-s
+    <value>] [--limit <value>]
 
 FLAGS
-  -e, --env=<value>      [default: development] Environment name (development, staging, production, or a custom one)
-  -t, --token=<value>    [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
-  -u, --url=<value>      [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
-                         https://dashboard.example.com); defaults to the value from `aoox login`
-      --limit=<value>    [default: 20] How many versions to show (newest first)
-      --project=<value>  Project ID or name; defaults to the project of the application linked with `aoox link`
+  -e, --env=<value>    Environment of the set (e.g. development, staging, production). Default: the only environment of
+                       the set the linked application links
+  -s, --set=<value>    Variable set slug (or name). Default: the only set the linked application links, or the only set
+                       you can see
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                       https://dashboard.example.com); defaults to the value from `aoox login`
+      --app=<value>    Application ID; defaults to the application linked with `aoox link`
+      --limit=<value>  [default: 20] How many versions to show (newest first)
+      --stack=<value>  Compose stack ID, instead of an application
 
 GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  Show the version history of an environment: when, who, and which variable names were added (+), changed (~) or removed
-  (-). Values are never shown
+  Show the version history of a variable set environment: when, who, and which variable names were added (+), changed
+  (~) or removed (-). Values are never shown
 
 EXAMPLES
-  $ aoox env history --env production
+  $ aoox env history --set shared --env production
 
   $ aoox env history --limit 5 --json
 ```
 
 _See code: [src/commands/env/history.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.9/src/commands/env/history.ts)_
 
-## `aoox env list`
+## `aoox env link`
 
-List the project environments, or (with --env) the variable names of one. Values are masked unless --reveal is given
+Link a variable set environment to the linked application (or --stack). It is added last, so it wins over the other links, unless --position is given; an environment that is already linked is moved. Takes effect on the next deploy
 
 ```
 USAGE
-  $ aoox env list [--json] [-t <value>] [-u <value>] [--project <value>] [-e <value>] [--reveal]
+  $ aoox env link -e <value> -s <value> [--json] [-t <value>] [-u <value>] [--stack <value> | --app <value>]
+    [--position <value>]
 
 FLAGS
-  -e, --env=<value>      Environment name; without it the environments of the project are listed
-  -t, --token=<value>    [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
-  -u, --url=<value>      [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
-                         https://dashboard.example.com); defaults to the value from `aoox login`
-      --project=<value>  Project ID or name; defaults to the project of the application linked with `aoox link`
-      --reveal           Show the values (needs --env; the read is recorded in the audit log)
+  -e, --env=<value>       (required) Environment of the set
+  -s, --set=<value>       (required) Variable set slug (or name)
+  -t, --token=<value>     [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>       [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                          https://dashboard.example.com); defaults to the value from `aoox login`
+      --app=<value>       Application ID; defaults to the application linked with `aoox link`
+      --position=<value>  1-based place in the list (1 = first, overridden by every later link). Default: last
+      --stack=<value>     Compose stack ID, instead of an application
 
 GLOBAL FLAGS
   --json  Format output as json.
 
 DESCRIPTION
-  List the project environments, or (with --env) the variable names of one. Values are masked unless --reveal is given
+  Link a variable set environment to the linked application (or --stack). It is added last, so it wins over the other
+  links, unless --position is given; an environment that is already linked is moved. Takes effect on the next deploy
+
+EXAMPLES
+  $ aoox env link --set shared --env production
+
+  $ aoox env link --set defaults --env production --position 1
+```
+
+_See code: [src/commands/env/link.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.9/src/commands/env/link.ts)_
+
+## `aoox env links`
+
+Show the variable set environments the linked application (or --stack) uses, in merge order, with the variables a later link or the own env overrides
+
+```
+USAGE
+  $ aoox env links [--json] [-t <value>] [-u <value>] [--stack <value> | --app <value>]
+
+FLAGS
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                       https://dashboard.example.com); defaults to the value from `aoox login`
+      --app=<value>    Application ID; defaults to the application linked with `aoox link`
+      --stack=<value>  Compose stack ID, instead of an application
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Show the variable set environments the linked application (or --stack) uses, in merge order, with the variables a
+  later link or the own env overrides
+
+EXAMPLES
+  $ aoox env links
+
+  $ aoox env links --stack <id>
+```
+
+_See code: [src/commands/env/links.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.9/src/commands/env/links.ts)_
+
+## `aoox env list`
+
+List the variable sets you can see and their environments (with --set: one set; with --env: the variable names of one environment). Values are masked unless --reveal is given
+
+```
+USAGE
+  $ aoox env list [--json] [-t <value>] [-u <value>] [--stack <value> | --app <value>] [-e <value>] [--reveal]
+    [-s <value>]
+
+FLAGS
+  -e, --env=<value>    Environment name; lists its variable names (the set defaults like in the other env commands)
+  -s, --set=<value>    Variable set slug (or name). Default: the only set the linked application links, or the only set
+                       you can see
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                       https://dashboard.example.com); defaults to the value from `aoox login`
+      --app=<value>    Application ID; defaults to the application linked with `aoox link`
+      --reveal         Show the values (needs --env; the read is recorded in the audit log)
+      --stack=<value>  Compose stack ID, instead of an application
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  List the variable sets you can see and their environments (with --set: one set; with --env: the variable names of one
+  environment). Values are masked unless --reveal is given
+
+ALIASES
+  $ aoox env sets
 
 EXAMPLES
   $ aoox env list
 
-  $ aoox env list --env staging
+  $ aoox env list --set shared
 
-  $ aoox env list --env development --reveal
+  $ aoox env list --set shared --env staging
+
+  $ aoox env list --set shared --env development --reveal
 ```
 
 _See code: [src/commands/env/list.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.9/src/commands/env/list.ts)_
 
-## `aoox env promote FROM TO`
+## `aoox env promote`
 
-Copy variables from one environment to another (name them, or use --all). Needs the right to read the source and to change the target. The target keeps its comments and order; new variables are appended. Shows what changes and asks before writing (unless --yes)
+Copy variables (and their secret flag) from one environment of a variable set to another (name them, or use --all). Needs the right to read the source and to change the target. The target keeps its comments and order; new variables are appended. Shows what changes and asks before writing (unless --yes)
 
 ```
 USAGE
-  $ aoox env promote FROM... TO... [-t <value>] [-u <value>] [--project <value>] [--all] [-y]
-
-ARGUMENTS
-  FROM...  Environment to copy the values from
-  TO...    Environment to copy the values into
+  $ aoox env promote --from <value> --to <value> [-t <value>] [-u <value>] [--stack <value> | --app <value>]
+    [--all] [-s <value>] [-y]
 
 FLAGS
-  -t, --token=<value>    [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
-  -u, --url=<value>      [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
-                         https://dashboard.example.com); defaults to the value from `aoox login`
-  -y, --yes              Do not ask for confirmation
-      --all              Promote every variable of the source (those already equal are skipped)
-      --project=<value>  Project ID or name; defaults to the project of the application linked with `aoox link`
+  -s, --set=<value>    Variable set slug (or name). Default: the only set the linked application links, or the only set
+                       you can see
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                       https://dashboard.example.com); defaults to the value from `aoox login`
+  -y, --yes            Do not ask for confirmation
+      --all            Promote every variable of the source (those already equal are skipped)
+      --app=<value>    Application ID; defaults to the application linked with `aoox link`
+      --from=<value>   (required) Environment to copy the values from
+      --stack=<value>  Compose stack ID, instead of an application
+      --to=<value>     (required) Environment to copy the values into
 
 DESCRIPTION
-  Copy variables from one environment to another (name them, or use --all). Needs the right to read the source and to
-  change the target. The target keeps its comments and order; new variables are appended. Shows what changes and asks
-  before writing (unless --yes)
+  Copy variables (and their secret flag) from one environment of a variable set to another (name them, or use --all).
+  Needs the right to read the source and to change the target. The target keeps its comments and order; new variables
+  are appended. Shows what changes and asks before writing (unless --yes)
 
 EXAMPLES
-  $ aoox env promote staging production API_URL FEATURE_X
+  $ aoox env promote --set shared --from staging --to production API_URL FEATURE_X
 
-  $ aoox env promote development staging --all --yes
+  $ aoox env promote --from development --to staging --all --yes
 ```
 
 _See code: [src/commands/env/promote.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.9/src/commands/env/promote.ts)_
 
 ## `aoox env pull`
 
-Write the variables of an environment to a local file (mode 0600), or to standard output with --file -. Refuses to overwrite unless --force. The read is recorded in the audit log
+Write the variables of a variable set environment to a local file (mode 0600), or to standard output with --file -. Refuses to overwrite unless --force. The read is recorded in the audit log
 
 ```
 USAGE
-  $ aoox env pull [-t <value>] [-u <value>] [--project <value>] [-e <value>] [--file <value>] [--force]
-    [--format dotenv|json|shell]
+  $ aoox env pull [-t <value>] [-u <value>] [--stack <value> | --app <value>] [-e <value>] [-s <value>]
+    [--file <value>] [--force] [--format dotenv|json|shell]
 
 FLAGS
-  -e, --env=<value>      [default: development] Environment name (development, staging, production, or a custom one)
+  -e, --env=<value>      Environment of the set (e.g. development, staging, production). Default: the only environment
+                         of the set the linked application links
+  -s, --set=<value>      Variable set slug (or name). Default: the only set the linked application links, or the only
+                         set you can see
   -t, --token=<value>    [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
   -u, --url=<value>      [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
                          https://dashboard.example.com); defaults to the value from `aoox login`
+      --app=<value>      Application ID; defaults to the application linked with `aoox link`
       --file=<value>     File to write, relative to the current folder; "-" writes to standard output (nothing else is
                          printed there). Default: .env, .env.json or .env.sh by format
       --force            Overwrite the file if it exists
       --format=<option>  [default: dotenv] dotenv (the stored text, comments kept), json ({"KEY":"value"}) or shell
                          (export KEY='value' lines for eval)
                          <options: dotenv|json|shell>
-      --project=<value>  Project ID or name; defaults to the project of the application linked with `aoox link`
+      --stack=<value>    Compose stack ID, instead of an application
 
 DESCRIPTION
-  Write the variables of an environment to a local file (mode 0600), or to standard output with --file -. Refuses to
-  overwrite unless --force. The read is recorded in the audit log
+  Write the variables of a variable set environment to a local file (mode 0600), or to standard output with --file -.
+  Refuses to overwrite unless --force. The read is recorded in the audit log
 
 EXAMPLES
   $ aoox env pull
 
-  $ aoox env pull --env staging --file .env.staging
+  $ aoox env pull --set shared --env staging --file .env.staging
 
   $ aoox env pull --force
 
@@ -357,59 +448,69 @@ _See code: [src/commands/env/pull.ts](https://github.com/hideandseeklab/aoox-cli
 
 ## `aoox env push`
 
-Replace the whole text of an environment with a local .env file. Shows what is added, changed and removed and asks before writing (unless --yes); the write fails if someone else changed the environment in between
+Replace the whole text of a variable set environment with a local .env file. Shows what is added, changed and removed and asks before writing (unless --yes); the write fails if someone else changed the environment in between
 
 ```
 USAGE
-  $ aoox env push --file <value> [-t <value>] [-u <value>] [--project <value>] [-e <value>] [-y]
+  $ aoox env push --file <value> [-t <value>] [-u <value>] [--stack <value> | --app <value>] [-e <value>] [-s
+    <value>] [-y]
 
 FLAGS
-  -e, --env=<value>      [default: development] Environment name (development, staging, production, or a custom one)
-  -t, --token=<value>    [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
-  -u, --url=<value>      [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
-                         https://dashboard.example.com); defaults to the value from `aoox login`
-  -y, --yes              Do not ask for confirmation
-      --file=<value>     (required) The .env file to upload
-      --project=<value>  Project ID or name; defaults to the project of the application linked with `aoox link`
+  -e, --env=<value>    Environment of the set (e.g. development, staging, production). Default: the only environment of
+                       the set the linked application links
+  -s, --set=<value>    Variable set slug (or name). Default: the only set the linked application links, or the only set
+                       you can see
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                       https://dashboard.example.com); defaults to the value from `aoox login`
+  -y, --yes            Do not ask for confirmation
+      --app=<value>    Application ID; defaults to the application linked with `aoox link`
+      --file=<value>   (required) The .env file to upload
+      --stack=<value>  Compose stack ID, instead of an application
 
 DESCRIPTION
-  Replace the whole text of an environment with a local .env file. Shows what is added, changed and removed and asks
-  before writing (unless --yes); the write fails if someone else changed the environment in between
+  Replace the whole text of a variable set environment with a local .env file. Shows what is added, changed and removed
+  and asks before writing (unless --yes); the write fails if someone else changed the environment in between
 
 EXAMPLES
   $ aoox env push --file .env
 
-  $ aoox env push --file .env.staging --env staging --yes
+  $ aoox env push --file .env.staging --set shared --env staging --yes
 ```
 
 _See code: [src/commands/env/push.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.9/src/commands/env/push.ts)_
 
 ## `aoox env set ASSIGNMENTS`
 
-Set one or more variables in an environment. Existing comments and order are kept; the write fails if someone else changed the environment in between
+Set one or more variables in a variable set environment. Existing comments and order are kept; the write fails if someone else changed the environment in between
 
 ```
 USAGE
-  $ aoox env set ASSIGNMENTS... [-t <value>] [-u <value>] [--project <value>] [-e <value>] [--secret]
+  $ aoox env set ASSIGNMENTS... [-t <value>] [-u <value>] [--stack <value> | --app <value>] [-e <value>] [-s
+    <value>] [--secret]
 
 ARGUMENTS
   ASSIGNMENTS...  KEY=VALUE (the value is stored exactly as given)
 
 FLAGS
-  -e, --env=<value>      [default: development] Environment name (development, staging, production, or a custom one)
-  -t, --token=<value>    [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
-  -u, --url=<value>      [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
-                         https://dashboard.example.com); defaults to the value from `aoox login`
-      --project=<value>  Project ID or name; defaults to the project of the application linked with `aoox link`
-      --[no-]secret      Mark the variables as secret (--secret: always masked in logs) or explicitly not secret
-                         (--no-secret: never masked). Without either the flag is left as it is
+  -e, --env=<value>    Environment of the set (e.g. development, staging, production). Default: the only environment of
+                       the set the linked application links
+  -s, --set=<value>    Variable set slug (or name). Default: the only set the linked application links, or the only set
+                       you can see
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                       https://dashboard.example.com); defaults to the value from `aoox login`
+      --app=<value>    Application ID; defaults to the application linked with `aoox link`
+      --[no-]secret    Mark the variables as secret (--secret: always masked in logs) or explicitly not secret
+                       (--no-secret: never masked). Without either the flag is left as it is
+      --stack=<value>  Compose stack ID, instead of an application
 
 DESCRIPTION
-  Set one or more variables in an environment. Existing comments and order are kept; the write fails if someone else
-  changed the environment in between
+  Set one or more variables in a variable set environment. Existing comments and order are kept; the write fails if
+  someone else changed the environment in between
 
 EXAMPLES
-  $ aoox env set API_URL=https://api.example.com
+  $ aoox env set API_URL=https://api.example.com --set shared --env production
 
   $ aoox env set GREETING="hello world" QUERY=a=b --env staging
 
@@ -418,32 +519,110 @@ EXAMPLES
 
 _See code: [src/commands/env/set.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.9/src/commands/env/set.ts)_
 
-## `aoox env unset KEYS`
+## `aoox env sets`
 
-Remove one or more variables from an environment. Comments and the other variables are kept; the write fails if someone else changed the environment in between
+List the variable sets you can see and their environments (with --set: one set; with --env: the variable names of one environment). Values are masked unless --reveal is given
 
 ```
 USAGE
-  $ aoox env unset KEYS... [-t <value>] [-u <value>] [--project <value>] [-e <value>]
+  $ aoox env sets [--json] [-t <value>] [-u <value>] [--stack <value> | --app <value>] [-e <value>] [--reveal]
+    [-s <value>]
+
+FLAGS
+  -e, --env=<value>    Environment name; lists its variable names (the set defaults like in the other env commands)
+  -s, --set=<value>    Variable set slug (or name). Default: the only set the linked application links, or the only set
+                       you can see
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                       https://dashboard.example.com); defaults to the value from `aoox login`
+      --app=<value>    Application ID; defaults to the application linked with `aoox link`
+      --reveal         Show the values (needs --env; the read is recorded in the audit log)
+      --stack=<value>  Compose stack ID, instead of an application
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  List the variable sets you can see and their environments (with --set: one set; with --env: the variable names of one
+  environment). Values are masked unless --reveal is given
+
+ALIASES
+  $ aoox env sets
+
+EXAMPLES
+  $ aoox env sets
+
+  $ aoox env sets --set shared
+
+  $ aoox env sets --set shared --env staging
+
+  $ aoox env sets --set shared --env development --reveal
+```
+
+## `aoox env unlink`
+
+Remove a variable set environment from the linked application (or --stack). Name it with --set and --env, or with its --position from `aoox env links`. Takes effect on the next deploy
+
+```
+USAGE
+  $ aoox env unlink [--json] [-t <value>] [-u <value>] [--stack <value> | --app <value>] [--position <value> |
+    -s <value> | -e <value>]
+
+FLAGS
+  -e, --env=<value>       Environment of the set
+  -s, --set=<value>       Variable set slug (or name)
+  -t, --token=<value>     [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>       [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                          https://dashboard.example.com); defaults to the value from `aoox login`
+      --app=<value>       Application ID; defaults to the application linked with `aoox link`
+      --position=<value>  1-based position as shown by `aoox env links`
+      --stack=<value>     Compose stack ID, instead of an application
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Remove a variable set environment from the linked application (or --stack). Name it with --set and --env, or with its
+  --position from `aoox env links`. Takes effect on the next deploy
+
+EXAMPLES
+  $ aoox env unlink --set shared --env staging
+
+  $ aoox env unlink --position 2
+```
+
+_See code: [src/commands/env/unlink.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.9/src/commands/env/unlink.ts)_
+
+## `aoox env unset KEYS`
+
+Remove one or more variables from a variable set environment. Comments and the other variables are kept; the write fails if someone else changed the environment in between
+
+```
+USAGE
+  $ aoox env unset KEYS... [-t <value>] [-u <value>] [--stack <value> | --app <value>] [-e <value>] [-s <value>]
 
 ARGUMENTS
   KEYS...  Variable name(s) to remove
 
 FLAGS
-  -e, --env=<value>      [default: development] Environment name (development, staging, production, or a custom one)
-  -t, --token=<value>    [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
-  -u, --url=<value>      [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
-                         https://dashboard.example.com); defaults to the value from `aoox login`
-      --project=<value>  Project ID or name; defaults to the project of the application linked with `aoox link`
+  -e, --env=<value>    Environment of the set (e.g. development, staging, production). Default: the only environment of
+                       the set the linked application links
+  -s, --set=<value>    Variable set slug (or name). Default: the only set the linked application links, or the only set
+                       you can see
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                       https://dashboard.example.com); defaults to the value from `aoox login`
+      --app=<value>    Application ID; defaults to the application linked with `aoox link`
+      --stack=<value>  Compose stack ID, instead of an application
 
 DESCRIPTION
-  Remove one or more variables from an environment. Comments and the other variables are kept; the write fails if
-  someone else changed the environment in between
+  Remove one or more variables from a variable set environment. Comments and the other variables are kept; the write
+  fails if someone else changed the environment in between
 
 EXAMPLES
   $ aoox env unset OLD_KEY
 
-  $ aoox env unset A B --env staging
+  $ aoox env unset A B --set shared --env staging
 ```
 
 _See code: [src/commands/env/unset.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.9/src/commands/env/unset.ts)_
@@ -972,31 +1151,39 @@ _See code: [src/commands/reinstall.ts](https://github.com/hideandseeklab/aoox-cl
 
 ## `aoox run`
 
-Run a command with the variables of an environment, without writing them to disk. Put the command after `--`; its exit code is forwarded. The read is recorded in the audit log
+Run a command with the variables the linked application gets at deploy time, without writing them to disk: its linked variable set environments in order (a later one wins), then its own env on top. With --set/--env, exactly one set environment instead. Put the command after `--`; its exit code is forwarded. Every read is recorded in the audit log
 
 ```
 USAGE
-  $ aoox run [-t <value>] [-u <value>] [--project <value>] [-e <value>] [--file <value>]
+  $ aoox run [-t <value>] [-u <value>] [--stack <value> | --app <value>] [-e <value>] [-s <value>]
+    [--file <value>]
 
 FLAGS
-  -e, --env=<value>      [default: development] Environment name (development, staging, production, or a custom one)
-  -t, --token=<value>    [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
-  -u, --url=<value>      [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
-                         https://dashboard.example.com); defaults to the value from `aoox login`
-      --file=<value>     A local .env file layered on top of the environment (it wins over aoox, which wins over the
-                         current environment). Only read, never written
-      --project=<value>  Project ID or name; defaults to the project of the application linked with `aoox link`
+  -e, --env=<value>    Environment of the set (e.g. development, staging, production). Default: the only environment of
+                       the set the linked application links
+  -s, --set=<value>    Variable set slug (or name). Default: the only set the linked application links, or the only set
+                       you can see
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                       https://dashboard.example.com); defaults to the value from `aoox login`
+      --app=<value>    Application ID; defaults to the application linked with `aoox link`
+      --file=<value>   A local .env file layered on top (it wins over aoox, which wins over the current environment).
+                       Only read, never written
+      --stack=<value>  Compose stack ID, instead of an application
 
 DESCRIPTION
-  Run a command with the variables of an environment, without writing them to disk. Put the command after `--`; its exit
-  code is forwarded. The read is recorded in the audit log
+  Run a command with the variables the linked application gets at deploy time, without writing them to disk: its linked
+  variable set environments in order (a later one wins), then its own env on top. With --set/--env, exactly one set
+  environment instead. Put the command after `--`; its exit code is forwarded. Every read is recorded in the audit log
 
 EXAMPLES
   $ aoox run -- npm run dev
 
-  $ aoox run --env staging -- node server.js
+  $ aoox run --set shared --env staging -- node server.js
 
   $ aoox run --file .env.local -- npm run dev
+
+  $ aoox run --stack <id> -- docker compose config
 ```
 
 _See code: [src/commands/run.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.9/src/commands/run.ts)_

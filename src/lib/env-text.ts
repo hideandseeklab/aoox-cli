@@ -271,6 +271,11 @@ export function checkEnvFile(raw: string): EnvFileCheck {
 
     seen.set(key, n)
     const value = trimmed.slice(eq + 1)
+    if (/\$\{\{\s*project\./.test(value)) {
+      problems.push(`Line ${n}: ${key} uses \${{project.…}}, which was renamed to \${{vars.…}}`)
+      continue
+    }
+
     if (value.length >= 2 && ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
       warnings.push(`Line ${n}: ${key} is quoted; aoox stores the quotes as part of the value (it does no quote processing)`)
     }

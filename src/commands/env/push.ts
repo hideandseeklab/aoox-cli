@@ -2,22 +2,18 @@ import {Flags} from '@oclif/core'
 import {readFile} from 'node:fs/promises'
 import {resolve} from 'node:path'
 
-import type {ProjectEnvironment} from '../../lib/types.js'
-
-import {api, ApiError} from '../../lib/api.js'
-import {EnvCommand, environmentFlag, projectFlags} from '../../lib/env-command.js'
+import {EnvCommand, environmentCommandFlags} from '../../lib/env-command.js'
 import {checkEnvFile, isEmptyChange, summarizeChange} from '../../lib/env-text.js'
 
 export default class EnvPush extends EnvCommand {
   static description =
-    'Replace the whole text of an environment with a local .env file. Shows what is added, changed and removed and asks before writing (unless --yes); the write fails if someone else changed the environment in between'
+    'Replace the whole text of a variable set environment with a local .env file. Shows what is added, changed and removed and asks before writing (unless --yes); the write fails if someone else changed the environment in between'
   static examples = [
     '<%= config.bin %> <%= command.id %> --file .env',
-    '<%= config.bin %> <%= command.id %> --file .env.staging --env staging --yes',
+    '<%= config.bin %> <%= command.id %> --file .env.staging --set shared --env staging --yes',
   ]
   static flags = {
-    ...projectFlags,
-    ...environmentFlag,
+    ...environmentCommandFlags,
     file: Flags.string({description: 'The .env file to upload', required: true}),
     yes: Flags.boolean({char: 'y', description: 'Do not ask for confirmation'}),
   }
@@ -46,11 +42,11 @@ export default class EnvPush extends EnvCommand {
     const summary = summarizeChange(current.variables, check.text)
     const sameText = current.variables.replaceAll('\r\n', '\n').trimEnd() === check.text.trimEnd()
     if (isEmptyChange(summary) && sameText) {
-      this.log(`${resolved.environment.name} already has exactly this content. Nothing to do.`)
+      this.log(`${resolved.label} already has exactly this content. Nothing to do.`)
       return
     }
 
-    this.log(`Project: ${resolved.projectName} · environment: ${resolved.environment.name}${resolved.environment.protected ? ' (protected)' : ''}`)
+    this.log(`Environment: ${resolved.label}${resolved.environment.protected ? ' (protected)' : ''}`)
     this.show('+', 'added', summary.added)
     this.show('~', 'changed', summary.changed)
     this.show('-', 'removed', summary.removed)
@@ -60,32 +56,18 @@ export default class EnvPush extends EnvCommand {
       this.log('Variables that are not in the file are removed: this replaces the whole environment.')
     }
 
-    if (!(await this.confirmOrFail(`Replace "${resolved.environment.name}" with the contents of ${flags.file}?`, flags.yes))) {
+    if (!(await this.confirmOrFail(`Replace "${resolved.label}" with the contents of ${flags.file}?`, flags.yes))) {
       this.log('Cancelled. Nothing was written.')
       return
     }
 
-    const expectedUpdatedAt = current.updatedAt ?? resolved.environment.updatedAt
-    let saved: ProjectEnvironment
-    try {
-      saved = await api<ProjectEnvironment>(
-        resolved.config,
-        `/projects/${resolved.projectId}/environments/${resolved.environment.id}`,
-        {body: {action: 'push', expectedUpdatedAt, variables: check.text}, method: 'PUT'},
-      )
-    } catch (error) {
-      if (error instanceof ApiError) {
-        if (error.status === 400) this.fail(error.message)
-        this.failFromApi(error, {environment: resolved.environment.name, verb: 'change'})
-      }
-
-      throw error
-    }
-
-    this.log(`${resolved.environment.name}: pushed ${saved.keys.length} variable${saved.keys.length === 1 ? '' : 's'} (a version was recorded)`)
-    if (saved.usedBy.length > 0) {
-      this.log(`Used by ${saved.usedBy.map((u) => u.name).join(', ')}: they pick the change up on their next deploy.`)
-    }
+    const saved = await this.saveEnvironment(resolved, {
+      action: 'push',
+      expectedUpdatedAt: current.updatedAt,
+      variables: check.text,
+    })
+    this.log(`${resolved.label}: pushed ${saved.keys.length} variable${saved.keys.length === 1 ? '' : 's'} (a version was recorded)`)
+    this.usedByNote(saved)
   }
 
   private show(sign: string, label: string, names: string[]): void {

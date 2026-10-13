@@ -1,35 +1,39 @@
-import {Args} from '@oclif/core'
+import {Flags} from '@oclif/core'
 
 import type {EnvironmentDiff} from '../../lib/types.js'
 
 import {api} from '../../lib/api.js'
-import {EnvCommand, projectFlags} from '../../lib/env-command.js'
+import {EnvCommand, ownerFlags, selectorFlags} from '../../lib/env-command.js'
+import {connectionFlags} from '../../lib/flags.js'
 
 export default class EnvDiff extends EnvCommand {
-  static args = {
-    from: Args.string({description: 'Environment to compare from', required: true}),
-    to: Args.string({description: 'Environment to compare to', required: true}),
-  }
   static description =
-    'Compare two environments key by key: which variables exist on one side only and which have different values. Prints names only, never values'
+    'Compare two environments of a variable set key by key: which variables exist on one side only and which have different values. Prints names only, never values'
   static enableJsonFlag = true
-  static examples = ['<%= config.bin %> <%= command.id %> staging production']
-  static flags = {...projectFlags}
+  static examples = ['<%= config.bin %> <%= command.id %> --set shared --from staging --to production']
+  static flags = {
+    ...connectionFlags,
+    ...ownerFlags,
+    from: Flags.string({description: 'Environment to compare from', required: true}),
+    set: selectorFlags.set,
+    to: Flags.string({description: 'Environment to compare to', required: true}),
+  }
 
   async run(): Promise<EnvironmentDiff> {
-    const {args, flags} = await this.parse(EnvDiff)
-    const {config, projectId, projectName} = await this.resolveProject(flags)
+    const {flags} = await this.parse(EnvDiff)
+    if (flags.from === flags.to) this.fail('Choose two different environments.')
+    const {config, set} = await this.resolveSet(flags)
     let diff: EnvironmentDiff
     try {
       diff = await api<EnvironmentDiff>(
         config,
-        `/projects/${projectId}/environments/diff?from=${encodeURIComponent(args.from)}&to=${encodeURIComponent(args.to)}`,
+        `/variable-sets/${set.id}/diff?from=${encodeURIComponent(flags.from)}&to=${encodeURIComponent(flags.to)}`,
       )
     } catch (error) {
       return this.failFromApi(error)
     }
 
-    this.log(`Project: ${projectName} · ${diff.from.name} -> ${diff.to.name}`)
+    this.log(`Set: ${set.slug} · ${diff.from.name} -> ${diff.to.name}`)
     this.section(`Only in ${diff.from.name}`, diff.onlyInFrom)
     this.section(`Only in ${diff.to.name}`, diff.onlyInTo)
     if (diff.comparable && diff.different && diff.same) {
@@ -40,7 +44,9 @@ export default class EnvDiff extends EnvCommand {
       }
     } else {
       this.log(`In both: ${diff.inBoth.length}`)
-      this.log('Values were not compared: you cannot read both environments (a protected environment needs a project admin).')
+      this.log(
+        'Values were not compared: you cannot read both environments (a protected environment needs an instance owner or admin, and a token scope can exclude one).',
+      )
     }
 
     return diff

@@ -2,23 +2,22 @@ import {Flags} from '@oclif/core'
 import {existsSync} from 'node:fs'
 import {resolve} from 'node:path'
 
-import {EnvCommand, environmentFlag, projectFlags} from '../../lib/env-command.js'
+import {EnvCommand, environmentCommandFlags} from '../../lib/env-command.js'
 import {FileExistsError, gitIgnoreStatus, writeEnvFile} from '../../lib/env-file.js'
 import {defaultFileFor, formatEnv, hasReferences, keysOf, type PullFormat, REFERENCE_NOTE} from '../../lib/env-text.js'
 
 export default class EnvPull extends EnvCommand {
   static description =
-    'Write the variables of an environment to a local file (mode 0600), or to standard output with --file -. Refuses to overwrite unless --force. The read is recorded in the audit log'
+    'Write the variables of a variable set environment to a local file (mode 0600), or to standard output with --file -. Refuses to overwrite unless --force. The read is recorded in the audit log'
   static examples = [
     '<%= config.bin %> <%= command.id %>',
-    '<%= config.bin %> <%= command.id %> --env staging --file .env.staging',
+    '<%= config.bin %> <%= command.id %> --set shared --env staging --file .env.staging',
     '<%= config.bin %> <%= command.id %> --force',
     '<%= config.bin %> <%= command.id %> --format json --file -',
     '<%= config.bin %> <%= command.id %> --format shell --file -',
   ]
   static flags = {
-    ...projectFlags,
-    ...environmentFlag,
+    ...environmentCommandFlags,
     file: Flags.string({
       description:
         'File to write, relative to the current folder; "-" writes to standard output (nothing else is printed there). Default: .env, .env.json or .env.sh by format',
@@ -67,7 +66,7 @@ export default class EnvPull extends EnvCommand {
     }
 
     const count = keysOf(revealed.variables).length
-    this.log(`Wrote ${count} variable${count === 1 ? '' : 's'} from "${resolved.environment.name}" to ${file}`)
+    this.log(`Wrote ${count} variable${count === 1 ? '' : 's'} from "${resolved.label}" to ${file}`)
     if (hasReferences(revealed.variables)) {
       this.warn(REFERENCE_NOTE)
     }

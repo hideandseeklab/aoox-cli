@@ -8,6 +8,21 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking: `aoox env` and `aoox run` work on variable sets.** The panel replaced its per-project environments with platform-level variable sets (each with its own environments, shared with all or selected projects, linked to applications and stacks in order). The 0.1.0-alpha.9 commands called endpoints that no longer exist and failed with 404. A set environment is now chosen with `--set/-s <slug>` and `--env/-e <name>`; `--project` and the `development` default are gone.
+  - Defaults: `--set` is the only set the linked application links (or the only set you can see), `--env` the only environment of that set it links. With several candidates the command stops and lists them; it never guesses.
+  - `aoox env list` (also `aoox env sets`) lists the sets you can see with your role, sharing and each environment's variable count; `--set` shows one set, `--env` the variable names of one environment, `--reveal` the values.
+  - `pull`, `push --file`, `set`, `unset` and `history` work as before on the chosen set environment (a change made by someone else in between is still refused with "Nothing was written").
+  - `aoox env diff --from <env> --to <env>` and `aoox env promote --from <env> --to <env> KEY…|--all` compare and copy within one set (previously positional `<from> <to>`).
+  - A refusal on a protected environment now says "only instance owners and admins can read/change it" (protected environments are no longer open to project admins).
+  - `env set` and `env push` refuse `${{project.KEY}}`, which was renamed to `${{vars.KEY}}`.
+- **`aoox run` uses what the application gets at deploy time.** By default it reveals the linked set environments in order (a later one wins on the same key), then puts the application's own env on top, then `--file`. `${{vars.KEY}}` is replaced by the merged set value (one level, like the panel); `${{database…}}` and `${{secret…}}` references are left as written with a warning naming the variables, and Infisical-synced secrets are not included. If any linked environment cannot be read, nothing is started. `--set/--env` runs with exactly one set environment instead (no links, no own env). `--stack <id>` uses a compose stack instead of the linked application.
+
+### Added
+
+- **`aoox env links`, `aoox env link --set --env [--position n]` and `aoox env unlink`** show and change the ordered list of set environments the linked application (or `--stack <id>`) uses. Positions are 1-based; `link` adds at the end (the new link wins) unless `--position` is given and moves an environment that is already linked; `unlink` takes `--set --env` or `--position`. The list shows which variables a later link or the own env overrides. Changes take effect on the next deploy.
+
 ## [0.1.0-alpha.9] - 2026-10-13
 
 ### Changed
