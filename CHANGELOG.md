@@ -8,6 +8,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+## [0.1.0-alpha.9] - 2026-10-13
+
 ### Changed
 
 - **One npm tag: `latest`.** Releases publish under `latest` only; the publish workflow no longer tries to move an `alpha` tag (npm Trusted Publishing cannot move tags, so `alpha` was left behind on 0.1.0-alpha.7 while `latest` got 0.1.0-alpha.8). Install with `npm i -g @hideandseeklab/aoox` and upgrade with `aoox update`.
@@ -191,7 +193,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 - `aoox install` — bootstrap aoox (postgres + api + web) on a fresh VPS via Docker Compose.
 - `aoox whoami` — show the account and panel currently in use.
 
-[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.8...HEAD
+[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.9...HEAD
+[0.1.0-alpha.9]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.8...v0.1.0-alpha.9
 [0.1.0-alpha.8]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.7...v0.1.0-alpha.8
 [0.1.0-alpha.7]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.6...v0.1.0-alpha.7
 [0.1.0-alpha.5]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.4...v0.1.0-alpha.5
