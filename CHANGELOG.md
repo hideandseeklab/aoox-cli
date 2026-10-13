@@ -8,6 +8,12 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+## [0.1.0-alpha.10] - 2026-10-13
+
+### Breaking changes
+
+- **Update the CLI together with the panel.** `aoox env` and `aoox run` from 0.1.0-alpha.9 get 404 from a panel on 0.1.0-alpha.10, and the new CLI needs the new panel (variable sets). Flags changed (`--set`/`--env` instead of `--project`; `diff`/`promote` take `--from`/`--to`) and `${{project.KEY}}` is refused in favour of `${{vars.KEY}}`; details below.
+
 ### Changed
 
 - **Breaking: `aoox env` and `aoox run` work on variable sets.** The panel replaced its per-project environments with platform-level variable sets (each with its own environments, shared with all or selected projects, linked to applications and stacks in order). The 0.1.0-alpha.9 commands called endpoints that no longer exist and failed with 404. A set environment is now chosen with `--set/-s <slug>` and `--env/-e <name>`; `--project` and the `development` default are gone.
@@ -18,9 +24,11 @@ Versions below 1.0.0 may include breaking changes in a minor release.
   - A refusal on a protected environment now says "only instance owners and admins can read/change it" (protected environments are no longer open to project admins).
   - `env set` and `env push` refuse `${{project.KEY}}`, which was renamed to `${{vars.KEY}}`.
 - **`aoox run` uses what the application gets at deploy time.** By default it reveals the linked set environments in order (a later one wins on the same key), then puts the application's own env on top, then `--file`. `${{vars.KEY}}` is replaced by the merged set value (one level, like the panel); `${{database…}}` and `${{secret…}}` references are left as written with a warning naming the variables, and Infisical-synced secrets are not included. If any linked environment cannot be read, nothing is started. `--set/--env` runs with exactly one set environment instead (no links, no own env). `--stack <id>` uses a compose stack instead of the linked application.
+- **`aoox run` announces what it injects.** Before the command starts, stderr gets one line, for example `aoox  Injecting 12 variables into your process · Application "web": common/development < backend/development < own env` (with `--set/--env`: `Injecting 5 variables from common/development (no links, no own env)`). The count is what aoox adds or overrides in the command's environment (linked sets, own env and `--file`), not the variables it inherits from your shell. The line is coloured only on a terminal (`NO_COLOR` turns colour off, `FORCE_COLOR` forces it, nothing is coloured in pipes or CI logs), and warnings now start with a `warn` label.
 
 ### Added
 
+- **`aoox run --quiet` / `-q`** hides the "Injecting N variables" line and the informational notes. Warnings about unresolved references and excluded Infisical secrets are always printed.
 - **`aoox env links`, `aoox env link --set --env [--position n]` and `aoox env unlink`** show and change the ordered list of set environments the linked application (or `--stack <id>`) uses. Positions are 1-based; `link` adds at the end (the new link wins) unless `--position` is given and moves an environment that is already linked; `unlink` takes `--set --env` or `--position`. The list shows which variables a later link or the own env overrides. Changes take effect on the next deploy.
 
 ## [0.1.0-alpha.9] - 2026-10-13
@@ -208,7 +216,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 - `aoox install` — bootstrap aoox (postgres + api + web) on a fresh VPS via Docker Compose.
 - `aoox whoami` — show the account and panel currently in use.
 
-[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.9...HEAD
+[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.10...HEAD
+[0.1.0-alpha.10]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.9...v0.1.0-alpha.10
 [0.1.0-alpha.9]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.8...v0.1.0-alpha.9
 [0.1.0-alpha.8]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.7...v0.1.0-alpha.8
 [0.1.0-alpha.7]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.6...v0.1.0-alpha.7

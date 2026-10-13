@@ -24,7 +24,12 @@ type Handler = (call: Call) => {body?: unknown; status?: number}
 let calls: Call[] = []
 let realFetch: typeof fetch
 let configHome: string
-const savedEnv = {LOCALAPPDATA: process.env.LOCALAPPDATA, XDG_CONFIG_HOME: process.env.XDG_CONFIG_HOME}
+const savedEnv = {
+  FORCE_COLOR: process.env.FORCE_COLOR,
+  LOCALAPPDATA: process.env.LOCALAPPDATA,
+  NO_COLOR: process.env.NO_COLOR,
+  XDG_CONFIG_HOME: process.env.XDG_CONFIG_HOME,
+}
 
 function fakePanel(handler: Handler): void {
   globalThis.fetch = (async (input: Request | string | URL, init?: {body?: unknown; method?: string}) => {
@@ -79,6 +84,40 @@ const link = (environmentId: string, environmentName: string, position: number) 
   shadowedKeys: [],
 })
 
+const runPanel = () =>
+  fakePanel(({path}) => {
+    if (path === '/applications/app-1') {
+      return {
+        body: {
+          env: 'C=own\nDB=${{database.main.url}}',
+          id: 'app-1',
+          name: 'web',
+          projectId: 'p1',
+          variableSets: [link('e-dev', 'development', 0)],
+        },
+      }
+    }
+
+    if (path === '/variable-sets/set-1/environments/e-dev/reveal') {
+      return {body: {keys: [], plainKeys: [], secretKeys: [], updatedAt: '2026-10-01T00:00:00.000Z', variables: 'A=dev\nB=dev'}}
+    }
+
+    return {status: 404}
+  })
+
+function fakePanelOneSet() {
+  fakePanel(({path}) => {
+    if (path === '/variable-sets') return {body: [shared]}
+    if (path === '/variable-sets/set-1') return {body: detail}
+    if (path === '/variable-sets/set-1/environments/e-dev/reveal') {
+      return {body: {keys: [], plainKeys: [], secretKeys: [], updatedAt: '2026-10-01T00:00:00.000Z', variables: 'A=dev'}}
+    }
+
+    return {status: 404}
+  })
+}
+
+
 const base = ['--url', URL_, '--token', 'aoox_test']
 
 describe('aoox env commands (fake panel)', () => {
@@ -88,6 +127,8 @@ describe('aoox env commands (fake panel)', () => {
     configHome = mkdtempSync(join(tmpdir(), 'aoox-env-test-'))
     process.env.XDG_CONFIG_HOME = configHome
     process.env.LOCALAPPDATA = configHome
+    delete process.env.NO_COLOR
+    delete process.env.FORCE_COLOR
   })
 
   afterEach(() => {
@@ -243,5 +284,51 @@ describe('aoox env commands (fake panel)', () => {
     ])
     expect(stderr).to.contain('Left as written')
     expect(stderr).to.contain('DB')
+  })
+
+  describe('aoox run banner', () => {
+    const child = ['--', 'node', '-e', '0']
+
+    it('prints a counted plain banner (own env overriding counts once, DB counts as injected)', async () => {
+      runPanel()
+      const {error, stderr} = await runCommand(['run', '--app', 'app-1', ...base, ...child], undefined, {stripAnsi: false})
+      expect(error, stderr).to.equal(undefined)
+      // A, B from the set; C, DB from the own env.
+      expect(stderr).to.contain(
+        'aoox  Injecting 4 variables into your process · Application "web": shared/development < own env',
+      )
+      expect(stderr).to.contain('warn  Left as written')
+      expect(stderr).to.not.contain('\u001B')
+    })
+
+    it('counts --file and says "1 variable"', async () => {
+      runPanel()
+      const file = join(configHome, 'extra.env')
+      writeFileSync(file, 'A=file\nZ=file\n')
+      const {stderr} = await runCommand(['run', '--app', 'app-1', ...base, '--file', file, ...child])
+      expect(stderr).to.contain('Injecting 5 variables')
+      fakePanelOneSet()
+      const one = await runCommand(['run', '--set', 'shared', '--env', 'development', ...base, ...child])
+      expect(one.stderr).to.contain('aoox  Injecting 1 variable from shared/development (no links, no own env)')
+    })
+
+    it('FORCE_COLOR adds codes, NO_COLOR removes them', async () => {
+      runPanel()
+      process.env.FORCE_COLOR = '1'
+      const forced = await runCommand(['run', '--app', 'app-1', ...base, ...child], undefined, {stripAnsi: false})
+      expect(forced.stderr).to.contain('\u001B[')
+      expect(forced.stderr).to.contain('\u001B[33mwarn\u001B[39m')
+      process.env.NO_COLOR = '1'
+      const off = await runCommand(['run', '--app', 'app-1', ...base, ...child], undefined, {stripAnsi: false})
+      expect(off.stderr).to.not.contain('\u001B')
+      expect(off.stderr).to.contain('Injecting 4 variables')
+    })
+
+    it('--quiet hides the banner but keeps the warnings', async () => {
+      runPanel()
+      const {stderr} = await runCommand(['run', '--quiet', '--app', 'app-1', ...base, ...child])
+      expect(stderr).to.not.contain('Injecting')
+      expect(stderr).to.contain('warn  Left as written')
+    })
   })
 })

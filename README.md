@@ -1151,16 +1151,18 @@ _See code: [src/commands/reinstall.ts](https://github.com/hideandseeklab/aoox-cl
 
 ## `aoox run`
 
-Run a command with the variables the linked application gets at deploy time, without writing them to disk: its linked variable set environments in order (a later one wins), then its own env on top. With --set/--env, exactly one set environment instead. Put the command after `--`; its exit code is forwarded. Every read is recorded in the audit log
+Run a command with the variables the linked application gets at deploy time, without writing them to disk: its linked variable set environments in order (a later one wins), then its own env on top. With --set/--env, exactly one set environment instead. Put the command after `--`; its exit code is forwarded. Before the command starts, one line on stderr says how many variables aoox injects and from which layers (colour only on a terminal; NO_COLOR turns it off, FORCE_COLOR forces it); --quiet hides it, but never the warnings. Every read is recorded in the audit log
 
 ```
 USAGE
   $ aoox run [-t <value>] [-u <value>] [--stack <value> | --app <value>] [-e <value>] [-s <value>]
-    [--file <value>]
+    [--file <value>] [-q]
 
 FLAGS
   -e, --env=<value>    Environment of the set (e.g. development, staging, production). Default: the only environment of
                        the set the linked application links
+  -q, --quiet          Do not print the "Injecting N variables" line or the informational notes. Warnings about
+                       unresolved references and excluded Infisical secrets are always printed
   -s, --set=<value>    Variable set slug (or name). Default: the only set the linked application links, or the only set
                        you can see
   -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
@@ -1174,7 +1176,9 @@ FLAGS
 DESCRIPTION
   Run a command with the variables the linked application gets at deploy time, without writing them to disk: its linked
   variable set environments in order (a later one wins), then its own env on top. With --set/--env, exactly one set
-  environment instead. Put the command after `--`; its exit code is forwarded. Every read is recorded in the audit log
+  environment instead. Put the command after `--`; its exit code is forwarded. Before the command starts, one line on
+  stderr says how many variables aoox injects and from which layers (colour only on a terminal; NO_COLOR turns it off,
+  FORCE_COLOR forces it); --quiet hides it, but never the warnings. Every read is recorded in the audit log
 
 EXAMPLES
   $ aoox run -- npm run dev
@@ -1184,6 +1188,8 @@ EXAMPLES
   $ aoox run --file .env.local -- npm run dev
 
   $ aoox run --stack <id> -- docker compose config
+
+  $ aoox run --quiet -- npm run dev
 ```
 
 _See code: [src/commands/run.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.9/src/commands/run.ts)_

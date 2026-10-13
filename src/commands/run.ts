@@ -14,6 +14,7 @@ import {
   splitAtDoubleDash,
 } from '../lib/env-run.js'
 import {hasReferences, toRecord} from '../lib/env-text.js'
+import {type BannerSource, colorEnabled, formatBanner, formatWarning, makeStyle} from '../lib/run-banner.js'
 import {mergeForRun, type RunLayer, type RunMerge} from '../lib/variable-sets.js'
 
 /** First match of `command` on PATH using PATHEXT (Windows), or undefined. */
@@ -31,20 +32,33 @@ function resolveOnPath(command: string): string | undefined {
   return undefined
 }
 
+interface RunResult {
+  banner: BannerSource
+  /** The owner syncs secrets from Infisical, which the CLI cannot fetch. */
+  infisical: boolean
+  merged: RunMerge
+}
+
 export default class Run extends EnvCommand {
   static description =
-    'Run a command with the variables the linked application gets at deploy time, without writing them to disk: its linked variable set environments in order (a later one wins), then its own env on top. With --set/--env, exactly one set environment instead. Put the command after `--`; its exit code is forwarded. Every read is recorded in the audit log'
+    'Run a command with the variables the linked application gets at deploy time, without writing them to disk: its linked variable set environments in order (a later one wins), then its own env on top. With --set/--env, exactly one set environment instead. Put the command after `--`; its exit code is forwarded. Before the command starts, one line on stderr says how many variables aoox injects and from which layers (colour only on a terminal; NO_COLOR turns it off, FORCE_COLOR forces it); --quiet hides it, but never the warnings. Every read is recorded in the audit log'
   static examples = [
     '<%= config.bin %> <%= command.id %> -- npm run dev',
     '<%= config.bin %> <%= command.id %> --set shared --env staging -- node server.js',
     '<%= config.bin %> <%= command.id %> --file .env.local -- npm run dev',
     '<%= config.bin %> <%= command.id %> --stack <id> -- docker compose config',
+    '<%= config.bin %> <%= command.id %> --quiet -- npm run dev',
   ]
   static flags = {
     ...environmentCommandFlags,
     file: Flags.string({
       description:
         'A local .env file layered on top (it wins over aoox, which wins over the current environment). Only read, never written',
+    }),
+    quiet: Flags.boolean({
+      char: 'q',
+      description:
+        'Do not print the "Injecting N variables" line or the informational notes. Warnings about unresolved references and excluded Infisical secrets are always printed',
     }),
   }
   static strict = false
@@ -71,21 +85,31 @@ export default class Run extends EnvCommand {
       local = toRecord(localText.replace(/^\uFEFF/, ''))
     }
 
-    const merged = flags.set || flags.env ? await this.oneEnvironment(flags) : await this.linkedVariables(flags)
+    const {banner, infisical, merged} =
+      flags.set || flags.env ? await this.oneEnvironment(flags) : await this.linkedVariables(flags)
+    // Precedence: process.env < aoox variables < local file.
+    const injected = layerVariables(merged.env, local)
+
+    const style = makeStyle(colorEnabled(process.env, Boolean(process.stderr.isTTY)))
+    if (!flags.quiet) this.logToStderr(formatBanner(Object.keys(injected).length, banner, style))
+    const warn = (text: string) => this.logToStderr(formatWarning(text, style))
+    if (infisical) {
+      warn('Secrets synced from the external secret source (Infisical) are not included; only the panel fetches them at deploy time.')
+    }
+
     if (merged.unresolved.length > 0) {
-      this.warn(
-        `Left as written (only the panel resolves database and secret references at deploy time): ${merged.unresolved.join(', ')}`,
-      )
+      warn(`Left as written (only the panel resolves database and secret references at deploy time): ${merged.unresolved.join(', ')}`)
     }
 
     if (merged.unknownVars.length > 0) {
-      this.warn(`Left as written (no linked set defines the \${{vars.…}} they name): ${merged.unknownVars.join(', ')}`)
+      warn(`Left as written (no linked set defines the \${{vars.…}} they name): ${merged.unknownVars.join(', ')}`)
     }
 
-    if (hasReferences(localText)) this.logToStderr(`Note: ${flags.file} has \${{…}} references; values from the file are used as written.`)
+    if (!flags.quiet && hasReferences(localText)) {
+      this.logToStderr(style.dim(`Note: ${flags.file} has \${{…}} references; values from the file are used as written.`))
+    }
 
-    // Precedence: process.env < aoox variables < local file.
-    const env = buildChildEnv(process.env, layerVariables(merged.env, local))
+    const env = buildChildEnv(process.env, injected)
     const code = await this.spawnChild(command, env)
     // The Windows exit fix (bin/run.js) makes process.exit a no-op that only
     // sets the code; exiting through oclif keeps both paths the same.
@@ -93,7 +117,7 @@ export default class Run extends EnvCommand {
   }
 
   /** The default: every linked environment in order, then the owner's own env (see `mergeForRun`). */
-  private async linkedVariables(flags: {app?: string; stack?: string; token?: string; url?: string}): Promise<RunMerge> {
+  private async linkedVariables(flags: {app?: string; stack?: string; token?: string; url?: string}): Promise<RunResult> {
     const {config, link} = await this.connect(flags)
     const owner = (await this.resolveOwner(config, link, flags, true))!
     const links = [...owner.detail.variableSets].sort((a, b) => a.position - b.position)
@@ -107,13 +131,11 @@ export default class Run extends EnvCommand {
       layers.push({label, text: revealed.variables})
     }
 
-    if (owner.detail.secretSource?.sync) {
-      this.warn('Secrets synced from the external secret source (Infisical) are not included; only the panel fetches them at deploy time.')
+    return {
+      banner: {kind: 'linked', layers: layers.map((l) => l.label), owner: owner.label},
+      infisical: Boolean(owner.detail.secretSource?.sync),
+      merged: mergeForRun(layers, owner.detail.env ?? ''),
     }
-
-    const used = [...layers.map((l) => l.label), 'own env']
-    this.logToStderr(`${owner.label}: ${used.join(' < ')}`)
-    return mergeForRun(layers, owner.detail.env ?? '')
   }
 
   /** `--set`/`--env`: exactly one set environment, without links or the own env. */
@@ -124,11 +146,14 @@ export default class Run extends EnvCommand {
     stack?: string
     token?: string
     url?: string
-  }): Promise<RunMerge> {
+  }): Promise<RunResult> {
     const resolved = await this.resolveEnvironment(flags)
     const revealed = await this.reveal(resolved)
-    this.logToStderr(`Variables of ${resolved.label} only (no links, no own env)`)
-    return mergeForRun([{label: resolved.label, text: revealed.variables}])
+    return {
+      banner: {kind: 'single', label: resolved.label},
+      infisical: false,
+      merged: mergeForRun([{label: resolved.label, text: revealed.variables}]),
+    }
   }
 
   /** Starts the child with inherited stdio; resolves with the exit code to forward. */
