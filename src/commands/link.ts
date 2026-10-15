@@ -10,7 +10,7 @@ import {writeLink} from '../lib/link.js'
 import {warnIfOutdated} from '../lib/outdated.js'
 
 export default class Link extends Command {
-  static description = 'Link this folder to an application in the panel (used by `aoox deploy`/`aoox logs`)'
+  static description = 'Link this folder to an application in the panel (used by `aoox deploy`, `aoox run` without `--set`/`--env`, and the `aoox env` defaults and links)'
   static examples = [
     '<%= config.bin %> <%= command.id %>',
     '<%= config.bin %> <%= command.id %> --project <id> --app <id>',

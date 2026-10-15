@@ -8,6 +8,10 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+### Fixed
+
+- `aoox link` help no longer mentions a non-existent `aoox logs`; it now says the link is used by `aoox deploy`, `aoox run` (without `--set`/`--env`) and the `aoox env` defaults and links.
+
 ## [0.1.0-alpha.10] - 2026-10-13
 
 ### Breaking changes

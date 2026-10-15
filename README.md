@@ -685,7 +685,7 @@ _See code: [src/commands/install.ts](https://github.com/hideandseeklab/aoox-cli/
 
 ## `aoox link`
 
-Link this folder to an application in the panel (used by `aoox deploy`/`aoox logs`)
+Link this folder to an application in the panel (used by `aoox deploy`, `aoox run` without `--set`/`--env`, and the `aoox env` defaults and links)
 
 ```
 USAGE
@@ -699,7 +699,8 @@ FLAGS
       --project=<value>  Project ID; skip the interactive selection
 
 DESCRIPTION
-  Link this folder to an application in the panel (used by `aoox deploy`/`aoox logs`)
+  Link this folder to an application in the panel (used by `aoox deploy`, `aoox run` without `--set`/`--env`, and the
+  `aoox env` defaults and links)
 
 EXAMPLES
   $ aoox link
