@@ -8,6 +8,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+## [0.1.0-alpha.11] - 2026-10-15
+
 ### Fixed
 
 - `aoox link` help no longer mentions a non-existent `aoox logs`; it now says the link is used by `aoox deploy`, `aoox run` (without `--set`/`--env`) and the `aoox env` defaults and links.
@@ -220,7 +222,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 - `aoox install` — bootstrap aoox (postgres + api + web) on a fresh VPS via Docker Compose.
 - `aoox whoami` — show the account and panel currently in use.
 
-[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.10...HEAD
+[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.11...HEAD
+[0.1.0-alpha.11]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.10...v0.1.0-alpha.11
 [0.1.0-alpha.10]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.9...v0.1.0-alpha.10
 [0.1.0-alpha.9]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.8...v0.1.0-alpha.9
 [0.1.0-alpha.8]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.7...v0.1.0-alpha.8
