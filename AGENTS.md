@@ -115,6 +115,8 @@ One canonical name: `aoox`.
 
 ## oclif v4 notes
 
+- **Ctrl+C at a prompt** (`src/lib/interrupt.ts`): `bin/run.js` and `bin/dev.js` call `executeCli()` (oclif's `execute` with one extra catch) instead of `execute`. An `ExitPromptError` (inquirer, and the readline `askChoice` in `image-confirm.ts`, which throws the same error name) prints `Aborted.` to stderr and exits **130**; every other error goes to oclif's `handle` as before. Commands must not catch `ExitPromptError` themselves. Do not use `execute` directly in a bin file.
+- **Test temp dirs**: any test that creates a folder under `os.tmpdir()` (`mkdtemp*`, prefix `aoox-…`) removes it in `afterEach`/`after` or `try/finally` with `rm(dir, {force: true, recursive: true})`.
 - `@oclif/core` v4 **has no `ux.prompt`** (only `action`, `colorize`, `error`, `exit`,
   `stderr`, `stdout`, `warn`) — prompts use `@inquirer/prompts`.
 - `static enableJsonFlag = true` → the value `return`ed from `run()` is printed as JSON when

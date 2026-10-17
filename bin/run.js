@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import {executeCli} from '../dist/lib/interrupt.js'
 import {applySystemCa} from '../dist/lib/system-ca.js'
 import {applyWindowsExitFix} from '../dist/lib/windows-exit-fix.js'
 
@@ -11,6 +12,4 @@ applyWindowsExitFix()
 // Runs before the first fetch(); opt out with AOOX_SYSTEM_CA=0.
 applySystemCa()
 
-const {execute} = await import('@oclif/core')
-
-await execute({dir: import.meta.url})
+await executeCli({dir: import.meta.url})

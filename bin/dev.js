@@ -4,6 +4,8 @@
 // so importing straight from src/ — instead of duplicating
 // windows-exit-fix.ts here — is fine.
 // eslint-disable-next-line n/no-unpublished-import
+import {executeCli} from '../src/lib/interrupt.js'
+// eslint-disable-next-line n/no-unpublished-import
 import {applySystemCa} from '../src/lib/system-ca.js'
 // eslint-disable-next-line n/no-unpublished-import
 import {applyWindowsExitFix} from '../src/lib/windows-exit-fix.js'
@@ -16,6 +18,4 @@ applyWindowsExitFix()
 // Runs before the first fetch(); opt out with AOOX_SYSTEM_CA=0.
 applySystemCa()
 
-const {execute} = await import('@oclif/core')
-
-await execute({development: true, dir: import.meta.url})
+await executeCli({development: true, dir: import.meta.url})

@@ -1,5 +1,5 @@
 import {expect} from 'chai'
-import {mkdtemp, writeFile} from 'node:fs/promises'
+import {mkdtemp, rm, writeFile} from 'node:fs/promises'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
 
@@ -57,13 +57,17 @@ describe('config lib', () => {
   describe('readConfig', () => {
     it('reads an old file (API url only) and a new one with webUrl', async () => {
       const dir = await mkdtemp(join(tmpdir(), 'aoox-cfg-'))
-      await writeFile(join(dir, 'config.json'), JSON.stringify({token: 'aoox_a', url: 'http://localhost:3001/'}))
-      expect(await readConfig(dir)).to.deep.equal({token: 'aoox_a', url: 'http://localhost:3001'})
-      await writeFile(
-        join(dir, 'config.json'),
-        JSON.stringify({token: 'aoox_a', url: 'https://api.x.test', webUrl: 'https://x.test/'}),
-      )
-      expect(await readConfig(dir)).to.deep.equal({token: 'aoox_a', url: 'https://api.x.test', webUrl: 'https://x.test'})
+      try {
+        await writeFile(join(dir, 'config.json'), JSON.stringify({token: 'aoox_a', url: 'http://localhost:3001/'}))
+        expect(await readConfig(dir)).to.deep.equal({token: 'aoox_a', url: 'http://localhost:3001'})
+        await writeFile(
+          join(dir, 'config.json'),
+          JSON.stringify({token: 'aoox_a', url: 'https://api.x.test', webUrl: 'https://x.test/'}),
+        )
+        expect(await readConfig(dir)).to.deep.equal({token: 'aoox_a', url: 'https://api.x.test', webUrl: 'https://x.test'})
+      } finally {
+        await rm(dir, {force: true, recursive: true})
+      }
     })
   })
 })

@@ -23,6 +23,7 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ### Fixed
 
+- Pressing Ctrl+C at any prompt (the build/push confirmation, `login`, `link`, `deploy`, `install`, `domain clear`, `env` confirmations) now prints a plain `Aborted.` and exits with code 130, instead of printing `ExitPromptError: User force closed the prompt with SIGINT` and exiting 1.
 - The bundled `docker-compose.dist.yml` passes `WEB_PORT` to the api service, so the address shown after removing the panel domain uses the real web port instead of always 3000.
 - `aoox reinstall --dry-run` now also checks the Docker Compose version when `docker-compose.override.yml` uses the `!override` tag: it prints a warning (and still exits 0, nothing is changed) when Compose is older than 2.24.4 or unreadable, or says the version could not be checked when Docker is not available.
 - `aoox reinstall` stops before changing anything when `docker-compose.override.yml` uses the `!override` tag (the dashboard option "Only allow access through the domain") and the host's Docker Compose is older than 2.24.4 or its version cannot be read. The message says to upgrade the Compose plugin or turn that option off in the dashboard first. `aoox install` and `aoox update` do not run the override on the host, so they need no check.
