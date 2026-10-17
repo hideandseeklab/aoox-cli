@@ -1,6 +1,6 @@
 import {expect} from 'chai'
 
-import {composeAtLeast, overrideGuardMessage, parseComposeVersion, usesOverrideTag} from '../../src/lib/compose-version.js'
+import {composeAtLeast, overrideDryRunNote, overrideGuardMessage, parseComposeVersion, usesOverrideTag} from '../../src/lib/compose-version.js'
 
 describe('compose version guard', () => {
   describe('parseComposeVersion', () => {
@@ -64,4 +64,26 @@ describe('compose version guard', () => {
       expect(msg).to.contain('could not be read')
     })
   })
+
+describe('overrideDryRunNote', () => {
+  const withTag = 'services:\n  web:\n    ports: !override\n      - "127.0.0.1:3000:3000"\n'
+
+  it('says nothing without the !override tag', () => {
+    expect(overrideDryRunNote('services: {}\n', '2.10.0', true)).to.equal(undefined)
+    expect(overrideDryRunNote(undefined, undefined, false)).to.equal(undefined)
+  })
+
+  it('says nothing when Compose is new enough', () => {
+    expect(overrideDryRunNote(withTag, '2.24.4', true)).to.equal(undefined)
+  })
+
+  it('warns that a real run would stop when Compose is too old or unreadable', () => {
+    expect(overrideDryRunNote(withTag, '2.20.0', true)).to.contain('would stop').and.to.contain('2.20.0')
+    expect(overrideDryRunNote(withTag, '', true)).to.contain('could not be read')
+  })
+
+  it('says the version could not be checked when Docker is not available', () => {
+    expect(overrideDryRunNote(withTag, undefined, false)).to.contain('could not be checked')
+  })
+})
 })

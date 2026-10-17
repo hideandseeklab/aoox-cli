@@ -4,7 +4,7 @@ import {chmod, copyFile, mkdir, readFile, rename, stat, writeFile} from 'node:fs
 import {resolve} from 'node:path'
 import {fileURLToPath} from 'node:url'
 
-import {overrideGuardMessage} from '../lib/compose-version.js'
+import {overrideDryRunNote, overrideGuardMessage} from '../lib/compose-version.js'
 import {dockerCapture, dockerInherit} from '../lib/docker.js'
 import {
   backupStamp,
@@ -108,6 +108,16 @@ export default class Reinstall extends Command {
     })
 
     if (flags['dry-run']) {
+      if (files.includes(OVERRIDE_FILE)) {
+        const dockerAvailable = commandExists('docker')
+        const note = overrideDryRunNote(
+          await readIfExists(`${dir}/${OVERRIDE_FILE}`),
+          dockerAvailable ? await dockerCapture(['compose', 'version', '--short']) : undefined,
+          dockerAvailable,
+        )
+        if (note) this.warn(note)
+      }
+
       this.log('\n(dry-run) Nothing was changed.')
       return
     }

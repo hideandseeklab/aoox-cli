@@ -31,6 +31,29 @@ export function usesOverrideTag(content?: string): boolean {
 }
 
 /**
+ * What `aoox reinstall --dry-run` says about the override file: a "would fail"
+ * warning when the Compose version is too old or unreadable, a "could not be
+ * checked" note when Docker is not available, undefined when there is nothing
+ * to report (no `!override` tag, or Compose is new enough).
+ */
+export function overrideDryRunNote(
+  overrideContent: string | undefined,
+  composeVersion: string | undefined,
+  dockerAvailable: boolean,
+): string | undefined {
+  if (!usesOverrideTag(overrideContent)) return undefined
+  if (!dockerAvailable) {
+    return (
+      `docker-compose.override.yml uses the YAML !override tag, which needs Docker Compose ${MIN_COMPOSE_FOR_OVERRIDE} or newer; ` +
+      'the installed version could not be checked (Docker was not found). A real run checks it again and stops before changing anything if it is too old.'
+    )
+  }
+
+  const guard = overrideGuardMessage(overrideContent, composeVersion)
+  return guard ? `A real run would stop here. ${guard}` : undefined
+}
+
+/**
  * The refusal text when the override needs `!override` but the host Compose is
  * too old or its version could not be read; undefined when it is fine.
  */
