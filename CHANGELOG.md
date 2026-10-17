@@ -8,32 +8,27 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+## [0.1.0-alpha.12] - 2026-10-17
+
 ### Added
 
 - `aoox domain clear` (with `--yes`) removes the panel's custom domain and goes back to IP access (`http://<server IP>:3000`), asking for confirmation first. Applications and their domains are not touched.
 - `aoox domain set --domain-only` (and `--no-domain-only` to undo it) turns on the panel's "only allow access through the domain" option: ports 3000/3001 then listen on 127.0.0.1 only. Needs both `--web` and `--api`; the command prints the recovery steps in case the domain stops working. Omitting the flag keeps the current setting.
-
 - `aoox registry build` and `aoox registry push` no longer need `name:version` typed in full. With no argument, or a name without a version, the CLI fills it in from the project (the build context for `build`, the current folder for `push`): `package.json`, `pyproject.toml`, `Cargo.toml`, `composer.json`, `pubspec.yaml`, a single `*.csproj`, `pom.xml`, then a `VERSION` file, then the git tag HEAD is on, and the folder name for the name. The first source that has a value wins and the output says which (for example `name from folder, version from git tag v1.4.2`). Names are lowercased with the npm scope removed (`@acme/web` becomes `web`), and `+` in a version becomes `_`. A typed `name:version` still wins and reads nothing; the "version already exists" refusal still applies and now says where to bump the version.
 - A name or version taken from the project is confirmed before anything is built or pushed: `Build web:1.4.2? (Y/n/e)` (continue, abort, or edit). `--yes` / `-y` skips the question; without a terminal, or with `CI` set, the command refuses and asks for `name:version` or `--yes`. A fully typed `name:version` never asks.
 - If HEAD is past the last git tag, `registry build|push` refuses to guess a version; add `--force` to use the `git describe` form (for example `1.4.2-3-gabc1234`).
 
-### UI UX Improvement
-
-- Step lines (`==> ...`), results, warnings and hints are coloured when the output is a terminal: bold cyan `==>`, green results (with a check mark only when colour is on), a yellow `warn` label like the red `error` one, dim secondary text and cyan values. `NO_COLOR` and `FORCE_COLOR` are honoured, each stream decides for itself, and plain output keeps its old text. Warnings now print as `warn  text` on stderr instead of oclif's `Warning: text`. docker output and machine-readable output (`aoox env pull` to stdout) stay untouched.
-
 ### Fixed
 
 - Pressing Ctrl+C at any prompt (the build/push confirmation, `login`, `link`, `deploy`, `install`, `domain clear`, `env` confirmations) now prints a plain `Aborted.` and exits with code 130, instead of printing `ExitPromptError: User force closed the prompt with SIGINT` and exiting 1.
-- The bundled `docker-compose.dist.yml` passes `WEB_PORT` to the api service, so the address shown after removing the panel domain uses the real web port instead of always 3000.
-- `aoox reinstall --dry-run` now also checks the Docker Compose version when `docker-compose.override.yml` uses the `!override` tag: it prints a warning (and still exits 0, nothing is changed) when Compose is older than 2.24.4 or unreadable, or says the version could not be checked when Docker is not available.
-- `aoox reinstall` stops before changing anything when `docker-compose.override.yml` uses the `!override` tag (the dashboard option "Only allow access through the domain") and the host's Docker Compose is older than 2.24.4 or its version cannot be read. The message says to upgrade the Compose plugin or turn that option off in the dashboard first. `aoox install` and `aoox update` do not run the override on the host, so they need no check.
-- The bundled `docker-compose.dist.yml` passes the optional `TRUST_PROXY` to the api service (which proxy hops may set the client IP); `aoox install` does not write it into a new `.env.dist`.
-- **Works behind antivirus HTTPS scanning and corporate proxies.** Every request to the panel failed with "The TLS certificate … is not trusted" when an antivirus (AVG, Avast, Kaspersky, ESET, Bitdefender) or proxy (Zscaler, Netskope, Fortinet, Palo Alto) re-signed HTTPS with a root that is installed in the OS store only. The CLI now trusts the operating system's certificate store in addition to Node's bundled list (and `NODE_EXTRA_CA_CERTS`) on Node 22.19+ / 24.5+; older Node keeps today's behaviour. Certificate verification is never disabled. Set `AOOX_SYSTEM_CA=0` to opt out.
+- **`aoox reinstall` refuses old Docker Compose with the domain-only override:** it stops before changing anything when `docker-compose.override.yml` uses the `!override` tag (the dashboard option "Only allow access through the domain") and the host's Docker Compose is older than 2.24.4 or its version cannot be read. The message says to upgrade the Compose plugin or turn that option off in the dashboard first. `aoox install` and `aoox update` do not run the override on the host, so they need no check. `aoox reinstall --dry-run` runs the same check but only prints a warning (exit 0, nothing is changed), or says the version could not be checked when Docker is not available.
+- The bundled `docker-compose.dist.yml` passes `WEB_PORT` to the api service (the address shown after removing the panel domain uses the real web port instead of always 3000) and the optional `TRUST_PROXY` (which proxy hops may set the client IP); `aoox install` does not write `TRUST_PROXY` into a new `.env.dist`.
+- **Works behind antivirus HTTPS scanning and corporate proxies.** Every request to the panel failed with "The TLS certificate … is not trusted" when an antivirus (AVG, Avast, Kaspersky, ESET, Bitdefender) or proxy (Zscaler, Netskope, Fortinet, Palo Alto) re-signed HTTPS with a root that is installed in the OS store only. The CLI now trusts the operating system's certificate store in addition to Node's bundled list (and `NODE_EXTRA_CA_CERTS`) on Node 22.19+ / 24.5+; older Node keeps today's behaviour. Certificate verification is never disabled. Set `AOOX_SYSTEM_CA=0` to opt out. An unknown-issuer certificate error now names the issuer (for example "AVG Web/Mail Shield Root") and says an antivirus or proxy is probably inspecting HTTPS, with the fixes: antivirus exclusion, `NODE_EXTRA_CA_CERTS`, or `NODE_OPTIONS=--use-system-ca` on older Node. Expired, self-signed and wrong-name certificates keep their wording.
+
+### UI UX Improvement
+
+- Step lines (`==> ...`), results, warnings and hints are coloured when the output is a terminal: bold cyan `==>`, green results (with a check mark only when colour is on), a yellow `warn` label like the red `error` one, dim secondary text and cyan values. `NO_COLOR` and `FORCE_COLOR` are honoured, each stream decides for itself, and plain output keeps its old text. Warnings now print as `warn  text` on stderr instead of oclif's `Warning: text`. docker output and machine-readable output (`aoox env pull` to stdout) stay untouched.
 - Error lines no longer start with an emoji whose width some terminals miscount (the text looked glued to it); they start with a red `error` label, like the `warn` label of `aoox run`.
-
-### Changed
-
-- An unknown-issuer certificate error now names the issuer (for example "AVG Web/Mail Shield Root") and says an antivirus or proxy is probably inspecting HTTPS, with the fixes: antivirus exclusion, `NODE_EXTRA_CA_CERTS`, or `NODE_OPTIONS=--use-system-ca` on older Node. Expired, self-signed and wrong-name certificates keep their wording.
 
 ## [0.1.0-alpha.11] - 2026-10-15
 
@@ -249,7 +244,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 - `aoox install` — bootstrap aoox (postgres + api + web) on a fresh VPS via Docker Compose.
 - `aoox whoami` — show the account and panel currently in use.
 
-[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.11...HEAD
+[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.12...HEAD
+[0.1.0-alpha.12]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.11...v0.1.0-alpha.12
 [0.1.0-alpha.11]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.10...v0.1.0-alpha.11
 [0.1.0-alpha.10]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.9...v0.1.0-alpha.10
 [0.1.0-alpha.9]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.8...v0.1.0-alpha.9
