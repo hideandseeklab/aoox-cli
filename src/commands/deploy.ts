@@ -12,6 +12,7 @@ import {imageRefFor} from '../lib/image-ref.js'
 import {readLink} from '../lib/link.js'
 import {warnIfOutdated} from '../lib/outdated.js'
 import {chooseRegistry, localhostRegistryHint} from '../lib/registry-select.js'
+import {stepLine, successLine, warnLine} from '../lib/style.js'
 
 type Config = Awaited<ReturnType<typeof loadCredentials>>
 
@@ -49,13 +50,13 @@ export default class Deploy extends Command {
       throw error
     }
 
-    await warnIfOutdated((m) => this.warn(m), this.config.version, config)
+    await warnIfOutdated((m) => this.logToStderr(warnLine(m)), this.config.version, config)
 
     const app = await this.getApplication(config, link.applicationId)
     const registry = await this.pickRegistry(config, flags.registry)
     const credentials = await api<RegistryCredentials>(config, `/registries/${registry.id}/credentials`)
     const localHint = localhostRegistryHint(registry.url, config.url)
-    if (localHint) this.warn(localHint)
+    if (localHint) this.logToStderr(warnLine(localHint))
 
     const tag = flags.tag ?? deployTag(cwd)
     const imageRef = imageRefFor({appName: app.appName, projectName: app.project.name, registryUrl: registry.url, tag})
@@ -66,18 +67,18 @@ export default class Deploy extends Command {
       this.error(headline, {suggestions: [hint]})
     }
 
-    this.log(`==> Build ${imageRef}`)
+    this.log(stepLine('Build', imageRef))
     await dockerInherit(['build', '-t', imageRef, '-f', flags.dockerfile, flags.context], cwd)
 
     if (credentials.username && credentials.password) {
-      this.log(`==> docker login ${registry.url}`)
+      this.log(stepLine('docker login', registry.url))
       await dockerLogin(registry.url, credentials.username, credentials.password, cwd)
     }
 
-    this.log(`==> Push ${imageRef}`)
+    this.log(stepLine('Push', imageRef))
     await dockerInherit(['push', imageRef], cwd)
 
-    this.log('==> Updating the application & triggering a deploy')
+    this.log(stepLine('Updating the application & triggering a deploy'))
     await api(config, `/applications/${app.id}`, {
       body: {imageRef, imageRegistryId: registry.id, sourceType: 'image'},
       method: 'PATCH',
@@ -100,7 +101,7 @@ export default class Deploy extends Command {
     }
 
     if (dep.status === 'success') {
-      this.log(`Deployed: ${dep.imageRef}`)
+      this.log(successLine('Deployed:', dep.imageRef ?? undefined))
       return
     }
 

@@ -11,7 +11,7 @@ import {
   PACKAGE_NAME,
   pickNewest,
 } from '../lib/self-update.js'
-import {errorLine} from '../lib/style.js'
+import {errorLine, stepLine, successLine} from '../lib/style.js'
 
 /**
  * Updates the CLI itself from the npm registry. Needs neither a login nor the
@@ -47,7 +47,7 @@ export default class Update extends Command {
     }
 
     if (!newest) {
-      this.log(`aoox CLI ${installed} is up to date`)
+      this.log(successLine(`aoox CLI ${installed} is up to date`))
       return
     }
 
@@ -69,14 +69,14 @@ export default class Update extends Command {
       return
     }
 
-    this.log(`==> npm ${npmInstallArgs(newest).join(' ')}`)
+    this.log(stepLine('npm', npmInstallArgs(newest).join(' ')))
     const code = await runNpm(npmInstallArgs(newest))
     if (code !== 0) {
       this.logToStderr(errorLine(`npm exited with code ${code}. Run it yourself: npm i -g ${PACKAGE_NAME}@${newest}`))
       this.exit(1)
     }
 
-    this.log(`Updated aoox CLI ${installed} → ${newest}`)
+    this.log(successLine(`Updated aoox CLI ${installed} → ${newest}`))
   }
 }
 

@@ -2,6 +2,7 @@ import {Args, Flags} from '@oclif/core'
 
 import {EnvCommand, environmentCommandFlags} from '../../lib/env-command.js'
 import {ENV_TEXT_MAX, EnvInputError, parseAssignments, setVariables} from '../../lib/env-text.js'
+import {successLine} from '../../lib/style.js'
 import {PROJECT_REFERENCE_HINT, projectReferenceKeys} from '../../lib/variable-sets.js'
 
 export default class EnvSet extends EnvCommand {
@@ -58,7 +59,7 @@ export default class EnvSet extends EnvCommand {
       result.updated.length > 0 ? `updated ${result.updated.join(', ')}` : '',
     ].filter(Boolean)
     if (parts.length > 0) parts[parts.length - 1] += mark
-    this.log(`${resolved.label}: ${parts.join('; ')} (${saved.keys.length} variable${saved.keys.length === 1 ? '' : 's'} now)`)
+    this.log(successLine(`${resolved.label}: ${parts.join('; ')} (${saved.keys.length} variable${saved.keys.length === 1 ? '' : 's'} now)`))
     this.usedByNote(saved)
   }
 }

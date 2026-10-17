@@ -8,6 +8,7 @@ import {fileURLToPath} from 'node:url'
 import {dockerInherit} from '../lib/docker.js'
 import {buildEnvFile, resolveTerminalSshUser} from '../lib/install-env.js'
 import {parseEnv} from '../lib/reinstall.js'
+import {stepLine, successLine, warnLine} from '../lib/style.js'
 import {commandExists, detectPublicIp, dockerRunning, dockerSocketGid, isRoot, runShellInherit} from '../lib/system.js'
 import {authorizeTerminalKey, skipReason} from '../lib/terminal-key.js'
 
@@ -62,7 +63,7 @@ export default class Install extends Command {
     // `node` user) — chown it now so first use doesn't hit EACCES.
     await this.chownNode(secretsDir)
 
-    this.log('==> Detecting the server public IP')
+    this.log(stepLine('Detecting the server public IP'))
     const publicIp = await detectPublicIp()
     const webOrigin = domainMode ? `https://${flags['web-domain']}` : `http://${publicIp ?? 'localhost'}:3000`
     const publicApiUrl = domainMode ? `https://${flags['api-domain']}` : `http://${publicIp ?? 'localhost'}:3001`
@@ -87,17 +88,17 @@ export default class Install extends Command {
     await writeFile(`${dir}/.env.dist`, env, {mode: 0o600})
     this.authorizeTerminal(dir, env, flags['no-terminal-authorize'])
 
-    this.log('==> Running docker compose up -d')
+    this.log(stepLine('Running docker compose up -d'))
     const composeArgs = ['compose', '-f', 'docker-compose.dist.yml']
     if (domainMode) composeArgs.push('-f', 'docker-compose.domain.yml')
     composeArgs.push('--env-file', '.env.dist', 'up', '-d')
     await dockerInherit(composeArgs, dir)
 
-    this.log('==> Waiting for the API to be ready')
+    this.log(stepLine('Waiting for the API to be ready'))
     await this.waitReady()
 
     this.log('')
-    this.log(`aoox is installed in ${dir}.`)
+    this.log(successLine(`aoox is installed in ${dir}.`))
     this.log(`Open: ${webOrigin}`)
     if (!flags['admin-email']) this.log('Create the first owner account at /setup.')
   }
@@ -129,14 +130,14 @@ export default class Install extends Command {
       user: vars.get('TERMINAL_SSH_USER'),
     })
     if (reason) {
-      if (optOut) this.log(`==> Terminal: key was not authorized automatically (${reason}).`)
+      if (optOut) this.log(stepLine(`Terminal: key was not authorized automatically (${reason}).`))
       return
     }
 
-    this.log('==> Preparing the SSH key for the web Terminal')
+    this.log(stepLine('Preparing the SSH key for the web Terminal'))
     const outcome = authorizeTerminalKey({installDir: resolve(dir), user: vars.get('TERMINAL_SSH_USER')!})
     if (outcome.ok) this.log(outcome.message)
-    else this.warn(outcome.message)
+    else this.logToStderr(warnLine(outcome.message))
   }
 
   /** `numeric:numeric` works even without a matching /etc/passwd entry on the host. */
@@ -144,7 +145,7 @@ export default class Install extends Command {
     try {
       await import('node:child_process').then(({execFileSync}) => execFileSync('chown', ['1000:1000', dir]))
     } catch (error) {
-      this.warn(`Cannot chown ${dir} (${String(error)}) — the web terminal may need this done manually later.`)
+      this.logToStderr(warnLine(`Cannot chown ${dir} (${String(error)}) — the web terminal may need this done manually later.`))
     }
   }
 
@@ -175,11 +176,11 @@ export default class Install extends Command {
     }
 
     if (hasSecrets) {
-      this.warn(
+      this.logToStderr(warnLine(
         `--force OVERWRITES ${dir}/.env.dist with new random secrets (POSTGRES_PASSWORD, JWT_SECRET, ENCRYPTION_KEY): ` +
           'the existing database can no longer be accessed and all stored credentials (registry, git, S3, notifications, 2FA) can no longer be decrypted. ' +
           'To repair the existing installation without losing data, cancel and run `sudo aoox reinstall`.',
-      )
+      ))
     }
 
     if (flags.yes) return
@@ -200,7 +201,7 @@ export default class Install extends Command {
       if (!ok) this.error('Docker is required to continue.')
     }
 
-    this.log(`==> ${DOCKER_INSTALL_SCRIPT}`)
+    this.log(stepLine(`${DOCKER_INSTALL_SCRIPT}`))
     await runShellInherit(DOCKER_INSTALL_SCRIPT)
     if (!(commandExists('docker') && dockerRunning())) {
       this.error('Docker still cannot be started after installation.', {
@@ -219,7 +220,7 @@ export default class Install extends Command {
     }
 
     if (Date.now() >= deadline) {
-      this.warn('The API did not respond in the expected time — check `docker compose logs api` in the installation directory.')
+      this.logToStderr(warnLine('The API did not respond in the expected time — check `docker compose logs api` in the installation directory.'))
       return
     }
 

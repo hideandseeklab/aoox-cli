@@ -5,6 +5,7 @@ import {resolve} from 'node:path'
 import {EnvCommand, environmentCommandFlags} from '../../lib/env-command.js'
 import {FileExistsError, gitIgnoreStatus, writeEnvFile} from '../../lib/env-file.js'
 import {defaultFileFor, formatEnv, hasReferences, keysOf, type PullFormat, REFERENCE_NOTE} from '../../lib/env-text.js'
+import {successLine, warnLine} from '../../lib/style.js'
 
 export default class EnvPull extends EnvCommand {
   static description =
@@ -66,15 +67,15 @@ export default class EnvPull extends EnvCommand {
     }
 
     const count = keysOf(revealed.variables).length
-    this.log(`Wrote ${count} variable${count === 1 ? '' : 's'} from "${resolved.label}" to ${file}`)
+    this.log(successLine(`Wrote ${count} variable${count === 1 ? '' : 's'} from "${resolved.label}" to ${file}`))
     if (hasReferences(revealed.variables)) {
-      this.warn(REFERENCE_NOTE)
+      this.logToStderr(warnLine(REFERENCE_NOTE))
     }
 
     if ((await gitIgnoreStatus(file, cwd)) === 'not-ignored') {
-      this.warn(
+      this.logToStderr(warnLine(
         `${file} is not covered by .gitignore, so it could be committed with its secrets. Add it, e.g.: echo "${file}" >> .gitignore`,
-      )
+      ))
     }
   }
 }

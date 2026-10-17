@@ -4,6 +4,7 @@ import {api, ApiError} from '../../lib/api.js'
 import {MissingCredentialsError} from '../../lib/config.js'
 import {connectionFlags, loadCredentials} from '../../lib/flags.js'
 import {warnIfOutdated} from '../../lib/outdated.js'
+import {successLine, warnLine} from '../../lib/style.js'
 
 interface ImageUpdateStatus {
   currentDigest: null | string
@@ -48,7 +49,7 @@ export default class UpdatePanel extends Command {
       throw error
     }
 
-    await warnIfOutdated((m) => this.warn(m), this.config.version, config)
+    await warnIfOutdated((m) => this.logToStderr(warnLine(m)), this.config.version, config)
 
     const status = await api<InstanceUpdateStatus>(config, '/instance/update')
     this.log(`Running version: ${status.currentVersion}`)
@@ -57,7 +58,7 @@ export default class UpdatePanel extends Command {
 
     const available = status.api.updateAvailable || status.web.updateAvailable
     if (!available) {
-      this.log('Already up to date.')
+      this.log(successLine('Already up to date.'))
       return
     }
 
@@ -78,7 +79,7 @@ export default class UpdatePanel extends Command {
       throw error
     }
 
-    this.log('Update applied — the panel will restart for a few seconds to apply it.')
+    this.log(successLine('Update applied — the panel will restart for a few seconds to apply it.'))
   }
 
   private printImage(label: string, status: ImageUpdateStatus): void {

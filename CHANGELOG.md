@@ -13,6 +13,14 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 - `aoox domain clear` (with `--yes`) removes the panel's custom domain and goes back to IP access (`http://<server IP>:3000`), asking for confirmation first. Applications and their domains are not touched.
 - `aoox domain set --domain-only` (and `--no-domain-only` to undo it) turns on the panel's "only allow access through the domain" option: ports 3000/3001 then listen on 127.0.0.1 only. Needs both `--web` and `--api`; the command prints the recovery steps in case the domain stops working. Omitting the flag keeps the current setting.
 
+- `aoox registry build` and `aoox registry push` no longer need `name:version` typed in full. With no argument, or a name without a version, the CLI fills it in from the project (the build context for `build`, the current folder for `push`): `package.json`, `pyproject.toml`, `Cargo.toml`, `composer.json`, `pubspec.yaml`, a single `*.csproj`, `pom.xml`, then a `VERSION` file, then the git tag HEAD is on, and the folder name for the name. The first source that has a value wins and the output says which (for example `name from folder, version from git tag v1.4.2`). Names are lowercased with the npm scope removed (`@acme/web` becomes `web`), and `+` in a version becomes `_`. A typed `name:version` still wins and reads nothing; the "version already exists" refusal still applies and now says where to bump the version.
+- A name or version taken from the project is confirmed before anything is built or pushed: `Build web:1.4.2? (Y/n/e)` (continue, abort, or edit). `--yes` / `-y` skips the question; without a terminal, or with `CI` set, the command refuses and asks for `name:version` or `--yes`. A fully typed `name:version` never asks.
+- If HEAD is past the last git tag, `registry build|push` refuses to guess a version; add `--force` to use the `git describe` form (for example `1.4.2-3-gabc1234`).
+
+### UI UX Improvement
+
+- Step lines (`==> ...`), results, warnings and hints are coloured when the output is a terminal: bold cyan `==>`, green results (with a check mark only when colour is on), a yellow `warn` label like the red `error` one, dim secondary text and cyan values. `NO_COLOR` and `FORCE_COLOR` are honoured, each stream decides for itself, and plain output keeps its old text. Warnings now print as `warn  text` on stderr instead of oclif's `Warning: text`. docker output and machine-readable output (`aoox env pull` to stdout) stay untouched.
+
 ### Fixed
 
 - The bundled `docker-compose.dist.yml` passes `WEB_PORT` to the api service, so the address shown after removing the panel domain uses the real web port instead of always 3000.

@@ -97,6 +97,29 @@ npm run build
 npm link            # or: npm install -g .
 ```
 
+## Image name and version from the project
+
+`aoox registry build` and `aoox registry push` do not need `name:version` typed in full. With no argument (or a name without a version) the CLI fills the gaps, in this order, from the build context (`push`: the current directory); the first source that has the value wins and is named in the output:
+
+| # | Source | Name | Version |
+| - | ------ | ---- | ------- |
+| 1 | `package.json` | `name`, npm scope removed (`@acme/web` becomes `web`) | `version` |
+| 2 | `pyproject.toml` | `[project]` or `[tool.poetry]` name | version (skipped when `dynamic`) |
+| 3 | `Cargo.toml` | `[package]` name | `[package]` version (not a workspace one) |
+| 4 | `composer.json` | `name`, vendor removed | `version`, if present |
+| 5 | `pubspec.yaml` | `name` | `version` |
+| 6 | `*.csproj` (exactly one) | `AssemblyName`, else the file name | `Version`, or `VersionPrefix`-`VersionSuffix` |
+| 7 | `pom.xml` | project `artifactId` | project `version` (not the parent's) |
+| 8 | `VERSION` | - | first non-empty line |
+| 9 | git tag | - | the tag HEAD is exactly on, leading `v` removed |
+| 10 | folder name | the folder, lowercased | - |
+
+Names are lowercased; a `+` in a version becomes `_` (tags cannot contain it). A value that cannot be read with certainty (an MSBuild `$(...)` or Maven `${...}` variable, `version.workspace`) is skipped. If HEAD is past the last tag the CLI refuses instead of guessing (tag it, type `name:version`, or `--force` to use the `git describe` form `1.4.2-3-gabc1234`). Because the result is derived, the CLI prints where it came from and asks `Build web:1.4.2? (Y/n/e)` first (`Y` continue, `n` abort, `e` edit); `--yes` skips the question, and without a terminal (or with `CI` set) it refuses and asks for `name:version` or `--yes`. A fully typed `name:version` never asks. The "version already exists" check still applies, so forgetting to bump the version never overwrites an image.
+
+## Colours
+
+Step lines (`==> ...`), results, warnings and hints are coloured when the output is a terminal. `NO_COLOR=1` turns colour off, `FORCE_COLOR=1` turns it on without a terminal (for example in some CI logs). Output meant for pipes (`aoox env pull` to stdout) and docker's own output are never coloured by the CLI.
+
 ## Behind an antivirus or corporate proxy
 
 Antivirus HTTPS scanning (AVG, Avast, Kaspersky, ESET, Bitdefender) and corporate proxies (Zscaler,
@@ -141,9 +164,9 @@ verification is never turned off.
 * [`aoox plugins uninstall [PLUGIN]`](#aoox-plugins-uninstall-plugin)
 * [`aoox plugins unlink [PLUGIN]`](#aoox-plugins-unlink-plugin)
 * [`aoox plugins update`](#aoox-plugins-update)
-* [`aoox registry build IMAGE`](#aoox-registry-build-image)
+* [`aoox registry build [IMAGE]`](#aoox-registry-build-image)
 * [`aoox registry domain`](#aoox-registry-domain)
-* [`aoox registry push IMAGE`](#aoox-registry-push-image)
+* [`aoox registry push [IMAGE]`](#aoox-registry-push-image)
 * [`aoox reinstall`](#aoox-reinstall)
 * [`aoox run`](#aoox-run)
 * [`aoox update`](#aoox-update)
@@ -1070,17 +1093,19 @@ DESCRIPTION
 
 _See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/5.5.2/src/commands/plugins/update.ts)_
 
-## `aoox registry build IMAGE`
+## `aoox registry build [IMAGE]`
 
 Build an image from a Dockerfile, named for the aoox registry (refuses a version that already exists there)
 
 ```
 USAGE
-  $ aoox registry build IMAGE [-t <value>] [-u <value>] [--force] [--registry <value>] [--context <value>] [-f
+  $ aoox registry build [IMAGE] [-t <value>] [-u <value>] [--force] [--registry <value>] [-y] [--context <value>] [-f
     <value>] [--push]
 
 ARGUMENTS
-  IMAGE  Image name and version, e.g. myapp:1.0.0
+  [IMAGE]  Image name and version, e.g. myapp:1.0.0. Omit it (or the version) to read them from the project in
+           the build context: package.json, pyproject.toml, Cargo.toml, composer.json, pubspec.yaml, *.csproj,
+           pom.xml, a VERSION file or a git tag
 
 FLAGS
   -f, --dockerfile=<value>  [default: Dockerfile] Path to the Dockerfile
@@ -1091,12 +1116,19 @@ FLAGS
       --force               Overwrite a version that already exists in the registry
       --push                Push the image to the registry right after the build
       --registry=<value>    Registry ID; defaults to the self-hosted registry
+  -y, --yes                 Do not ask to confirm an image name or version taken from the project
 
 DESCRIPTION
   Build an image from a Dockerfile, named for the aoox registry (refuses a version that already exists there)
 
 EXAMPLES
   $ aoox registry build myapp:1.0.0
+
+  $ aoox registry build --push
+
+  $ aoox registry build myapp --context ./app
+
+  $ aoox registry build --push --yes
 
   $ aoox registry build myapp:1.0.0 --push
 
@@ -1133,16 +1165,18 @@ EXAMPLES
 
 _See code: [src/commands/registry/domain.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.11/src/commands/registry/domain.ts)_
 
-## `aoox registry push IMAGE`
+## `aoox registry push [IMAGE]`
 
 Push a local image to the aoox registry (refuses a version that already exists there)
 
 ```
 USAGE
-  $ aoox registry push IMAGE [-t <value>] [-u <value>] [--force] [--registry <value>]
+  $ aoox registry push [IMAGE] [-t <value>] [-u <value>] [--force] [--registry <value>] [-y]
 
 ARGUMENTS
-  IMAGE  Image name and version (short or full), e.g. myapp:1.0.0
+  [IMAGE]  Image name and version (short or full), e.g. myapp:1.0.0. Omit it (or the version) to read them from
+           the project in the current directory: package.json, pyproject.toml, Cargo.toml, composer.json,
+           pubspec.yaml, *.csproj, pom.xml, a VERSION file or a git tag
 
 FLAGS
   -t, --token=<value>     [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
@@ -1150,6 +1184,7 @@ FLAGS
                           https://dashboard.example.com); defaults to the value from `aoox login`
       --force             Overwrite a version that already exists in the registry
       --registry=<value>  Registry ID; defaults to the self-hosted registry
+  -y, --yes               Do not ask to confirm an image name or version taken from the project
 
 DESCRIPTION
   Push a local image to the aoox registry (refuses a version that already exists there)
@@ -1158,6 +1193,10 @@ EXAMPLES
   $ aoox registry push myapp:1.0.0
 
   $ aoox registry push registry.example.com/myapp:1.0.0
+
+  $ aoox registry push
+
+  $ aoox registry push myapp
 
   $ aoox registry push myapp:1.0.0 --force
 ```
@@ -1334,9 +1373,9 @@ _See code: [src/commands/whoami.ts](https://github.com/hideandseeklab/aoox-cli/b
 * [`aoox plugins uninstall [PLUGIN]`](#aoox-plugins-uninstall-plugin)
 * [`aoox plugins unlink [PLUGIN]`](#aoox-plugins-unlink-plugin)
 * [`aoox plugins update`](#aoox-plugins-update)
-* [`aoox registry build IMAGE`](#aoox-registry-build-image)
+* [`aoox registry build [IMAGE]`](#aoox-registry-build-image)
 * [`aoox registry domain`](#aoox-registry-domain)
-* [`aoox registry push IMAGE`](#aoox-registry-push-image)
+* [`aoox registry push [IMAGE]`](#aoox-registry-push-image)
 * [`aoox reinstall`](#aoox-reinstall)
 * [`aoox run`](#aoox-run)
 * [`aoox update`](#aoox-update)
@@ -1950,17 +1989,19 @@ DESCRIPTION
 
 _See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/5.5.2/src/commands/plugins/update.ts)_
 
-## `aoox registry build IMAGE`
+## `aoox registry build [IMAGE]`
 
 Build an image from a Dockerfile, named for the aoox registry (refuses a version that already exists there)
 
 ```
 USAGE
-  $ aoox registry build IMAGE [-t <value>] [-u <value>] [--force] [--registry <value>] [--context <value>] [-f
+  $ aoox registry build [IMAGE] [-t <value>] [-u <value>] [--force] [--registry <value>] [-y] [--context <value>] [-f
     <value>] [--push]
 
 ARGUMENTS
-  IMAGE  Image name and version, e.g. myapp:1.0.0
+  [IMAGE]  Image name and version, e.g. myapp:1.0.0. Omit it (or the version) to read them from the project in
+           the build context: package.json, pyproject.toml, Cargo.toml, composer.json, pubspec.yaml, *.csproj,
+           pom.xml, a VERSION file or a git tag
 
 FLAGS
   -f, --dockerfile=<value>  [default: Dockerfile] Path to the Dockerfile
@@ -1971,12 +2012,19 @@ FLAGS
       --force               Overwrite a version that already exists in the registry
       --push                Push the image to the registry right after the build
       --registry=<value>    Registry ID; defaults to the self-hosted registry
+  -y, --yes                 Do not ask to confirm an image name or version taken from the project
 
 DESCRIPTION
   Build an image from a Dockerfile, named for the aoox registry (refuses a version that already exists there)
 
 EXAMPLES
   $ aoox registry build myapp:1.0.0
+
+  $ aoox registry build --push
+
+  $ aoox registry build myapp --context ./app
+
+  $ aoox registry build --push --yes
 
   $ aoox registry build myapp:1.0.0 --push
 
@@ -2013,16 +2061,18 @@ EXAMPLES
 
 _See code: [src/commands/registry/domain.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.8/src/commands/registry/domain.ts)_
 
-## `aoox registry push IMAGE`
+## `aoox registry push [IMAGE]`
 
 Push a local image to the aoox registry (refuses a version that already exists there)
 
 ```
 USAGE
-  $ aoox registry push IMAGE [-t <value>] [-u <value>] [--force] [--registry <value>]
+  $ aoox registry push [IMAGE] [-t <value>] [-u <value>] [--force] [--registry <value>] [-y]
 
 ARGUMENTS
-  IMAGE  Image name and version (short or full), e.g. myapp:1.0.0
+  [IMAGE]  Image name and version (short or full), e.g. myapp:1.0.0. Omit it (or the version) to read them from
+           the project in the current directory: package.json, pyproject.toml, Cargo.toml, composer.json,
+           pubspec.yaml, *.csproj, pom.xml, a VERSION file or a git tag
 
 FLAGS
   -t, --token=<value>     [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
@@ -2030,6 +2080,7 @@ FLAGS
                           https://dashboard.example.com); defaults to the value from `aoox login`
       --force             Overwrite a version that already exists in the registry
       --registry=<value>  Registry ID; defaults to the self-hosted registry
+  -y, --yes               Do not ask to confirm an image name or version taken from the project
 
 DESCRIPTION
   Push a local image to the aoox registry (refuses a version that already exists there)
@@ -2038,6 +2089,10 @@ EXAMPLES
   $ aoox registry push myapp:1.0.0
 
   $ aoox registry push registry.example.com/myapp:1.0.0
+
+  $ aoox registry push
+
+  $ aoox registry push myapp
 
   $ aoox registry push myapp:1.0.0 --force
 ```

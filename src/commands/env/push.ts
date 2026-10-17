@@ -4,6 +4,7 @@ import {resolve} from 'node:path'
 
 import {EnvCommand, environmentCommandFlags} from '../../lib/env-command.js'
 import {checkEnvFile, isEmptyChange, summarizeChange} from '../../lib/env-text.js'
+import {successLine, warnLine} from '../../lib/style.js'
 
 export default class EnvPush extends EnvCommand {
   static description =
@@ -35,7 +36,7 @@ export default class EnvPush extends EnvCommand {
       this.fail(`${flags.file} cannot be uploaded:`, ...check.problems.slice(0, 10).map((p) => `  ${p}`), ...more)
     }
 
-    for (const w of check.warnings.slice(0, 5)) this.warn(w)
+    for (const w of check.warnings.slice(0, 5)) this.logToStderr(warnLine(w))
 
     const resolved = await this.resolveEnvironment(flags)
     const current = await this.reveal(resolved, 'change')
@@ -66,7 +67,7 @@ export default class EnvPush extends EnvCommand {
       expectedUpdatedAt: current.updatedAt,
       variables: check.text,
     })
-    this.log(`${resolved.label}: pushed ${saved.keys.length} variable${saved.keys.length === 1 ? '' : 's'} (a version was recorded)`)
+    this.log(successLine(`${resolved.label}: pushed ${saved.keys.length} variable${saved.keys.length === 1 ? '' : 's'} (a version was recorded)`))
     this.usedByNote(saved)
   }
 

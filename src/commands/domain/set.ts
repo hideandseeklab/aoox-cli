@@ -4,6 +4,7 @@ import {api, ApiError} from '../../lib/api.js'
 import {MissingCredentialsError} from '../../lib/config.js'
 import {connectionFlags, loadCredentials} from '../../lib/flags.js'
 import {warnIfOutdated} from '../../lib/outdated.js'
+import {successLine, warnLine} from '../../lib/style.js'
 
 interface PanelDomainSettings {
   acmeEmail: null | string
@@ -57,7 +58,7 @@ static flags = {
       throw error
     }
 
-    await warnIfOutdated((m) => this.warn(m), this.config.version, config)
+    await warnIfOutdated((m) => this.logToStderr(warnLine(m)), this.config.version, config)
 
     let result: UpdatePanelDomainResult
     try {
@@ -80,18 +81,18 @@ static flags = {
       throw error
     }
 
-    this.log(`Domain saved: ${flags.web} (dashboard), ${flags.api} (API).`)
+    this.log(successLine(`Domain saved: ${flags.web} (dashboard), ${flags.api} (API).`))
     this.log('The panel will restart for a few seconds to apply it — the connection to this API will drop briefly.')
 
     if (result.restrictPortsNote) {
       this.log('')
-      this.warn('Access through IP:3000 / IP:3001 is closed once the panel restarts — use the domains above.')
+      this.logToStderr(warnLine('Access through IP:3000 / IP:3001 is closed once the panel restarts — use the domains above.'))
       this.log(result.restrictPortsNote)
     }
 
     if (result.proxyAutoProvisioned) {
       this.log('')
-      this.warn('The reverse proxy was not running before — it has been enabled automatically.')
+      this.logToStderr(warnLine('The reverse proxy was not running before — it has been enabled automatically.'))
       this.log('The new domains will be reachable only if these three things are also correct:')
       this.log(`  1. DNS A records for ${flags.web} and ${flags.api} point to this server's IP.`)
       this.log('  2. Ports 80 and 443 are open to the public (both the OS firewall and the VPS provider security group).')

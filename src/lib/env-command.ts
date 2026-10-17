@@ -16,7 +16,7 @@ import {MissingCredentialsError} from './config.js'
 import {connectionFlags, loadCredentials} from './flags.js'
 import {type LinkFile, readLink} from './link.js'
 import {warnIfOutdated} from './outdated.js'
-import {errorLine} from './style.js'
+import {errorLine, warnLine} from './style.js'
 import {pickEnvironment, pickSet, SelectionError} from './variable-sets.js'
 
 /** `--app` / `--stack`: which application or compose stack; default = the one linked with `aoox link`. */
@@ -150,7 +150,7 @@ export abstract class EnvCommand extends Command {
   protected async loadConfig(flags: ConnectionFlagValues, defaultUrl?: string): Promise<CliConfig> {
     try {
       const config = await loadCredentials(this.config.configDir, flags, defaultUrl)
-      await warnIfOutdated((m) => this.warn(m), this.config.version, config)
+      await warnIfOutdated((m) => this.logToStderr(warnLine(m)), this.config.version, config)
       return config
     } catch (error) {
       if (error instanceof MissingCredentialsError) this.fail(error.message, 'Run `aoox login`.')

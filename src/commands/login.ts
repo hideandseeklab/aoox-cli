@@ -9,6 +9,7 @@ import {readConfig, writeConfig} from '../lib/config.js'
 import {discover, DiscoveryError} from '../lib/discovery.js'
 import {connectionFlags} from '../lib/flags.js'
 import {warnIfOutdated} from '../lib/outdated.js'
+import {hintLine, successLine, warnLine} from '../lib/style.js'
 
 const DEFAULT_URL = 'http://localhost:3000'
 
@@ -47,9 +48,9 @@ export default class Login extends Command {
       ...(found.webUrl ? {webUrl: found.webUrl} : {}),
     })
 
-    this.log(`Logged in as ${user.email} (${user.role}) at ${found.webUrl ?? found.apiUrl}`)
-    this.log(`Token saved to ${path}`)
-    await warnIfOutdated((m) => this.warn(m), this.config.version, {token, url: found.apiUrl}, user.version)
+    this.log(successLine(`Logged in as ${user.email} (${user.role}) at ${found.webUrl ?? found.apiUrl}`))
+    this.log(hintLine(`Token saved to ${path}`))
+    await warnIfOutdated((m) => this.logToStderr(warnLine(m)), this.config.version, {token, url: found.apiUrl}, user.version)
   }
 
   private async discoverOrFail(raw: string): Promise<Discovered> {

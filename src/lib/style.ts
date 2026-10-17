@@ -45,3 +45,52 @@ export function formatError(text: string, s: Style): string {
 export function errorLine(text: string): string {
   return formatError(text, makeStyle(colorEnabled(process.env, Boolean(process.stderr.isTTY))))
 }
+
+// ---- Step-style lines -------------------------------------------------------
+// Every command that prints progress uses these instead of a bare `this.log` /
+// `this.warn`, so the scheme stays the same everywhere:
+//   step     `==> Build web:1.4.2`   `==>` bold cyan, label bold, value cyan
+//   success  `✓ Pushed web:1.4.2`    green; the `✓` only appears with colour on,
+//                                    so plain/CI output has no symbol
+//   warn     `warn  text`            yellow label, like `error`
+//   hint     secondary info          dim
+// stdout lines decide colour from stdout, stderr lines from stderr.
+
+/** `==> label value`: `==>` bold cyan, label bold, value cyan. */
+export function formatStep(s: Style, label: string, value?: string): string {
+  return `${s.bold(s.cyan('==>'))} ${s.bold(label)}${value ? ` ${s.cyan(value)}` : ''}`
+}
+
+/** Green result line; `symbol` is true when colour is on (plain output has no symbol). */
+export function formatSuccess(s: Style, symbol: boolean, label: string, value?: string): string {
+  return `${symbol ? `${s.green('✓')} ` : ''}${s.green(label)}${value ? ` ${s.cyan(value)}` : ''}`
+}
+
+/** Yellow `warn` label, two spaces, the text (same shape as the red `error` label). */
+export function formatWarn(s: Style, text: string): string {
+  return `${s.yellow('warn')}  ${text}`
+}
+
+const stdoutColor = (): boolean => colorEnabled(process.env, Boolean(process.stdout.isTTY))
+const stderrColor = (): boolean => colorEnabled(process.env, Boolean(process.stderr.isTTY))
+
+/** For `this.log`. */
+export function stepLine(label: string, value?: string): string {
+  return formatStep(makeStyle(stdoutColor()), label, value)
+}
+
+/** For `this.log`. */
+export function successLine(label: string, value?: string): string {
+  const colour = stdoutColor()
+  return formatSuccess(makeStyle(colour), colour, label, value)
+}
+
+/** Dim secondary text for `this.log`. */
+export function hintLine(text: string): string {
+  return makeStyle(stdoutColor()).dim(text)
+}
+
+/** For `this.logToStderr` (warnings go to stderr, as `this.warn` did). */
+export function warnLine(text: string): string {
+  return formatWarn(makeStyle(stderrColor()), text)
+}

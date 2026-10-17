@@ -8,6 +8,7 @@ import {MissingCredentialsError} from '../lib/config.js'
 import {connectionFlags, loadCredentials} from '../lib/flags.js'
 import {writeLink} from '../lib/link.js'
 import {warnIfOutdated} from '../lib/outdated.js'
+import {hintLine, successLine, warnLine} from '../lib/style.js'
 
 export default class Link extends Command {
   static description = 'Link this folder to an application in the panel (used by `aoox deploy`, `aoox run` without `--set`/`--env`, and the `aoox env` defaults and links)'
@@ -46,9 +47,9 @@ export default class Link extends Command {
       url: config.url,
     })
 
-    this.log(`Linked: ${project.name} / ${application.name} (${application.appName})`)
-    this.log(`Written to ${path} — safe to commit, contains no secrets.`)
-    await warnIfOutdated((m) => this.warn(m), this.config.version, config)
+    this.log(successLine(`Linked: ${project.name} / ${application.name} (${application.appName})`))
+    this.log(hintLine(`Written to ${path} — safe to commit, contains no secrets.`))
+    await warnIfOutdated((m) => this.logToStderr(warnLine(m)), this.config.version, config)
   }
 
   private async pickApplication(

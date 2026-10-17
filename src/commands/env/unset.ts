@@ -2,6 +2,7 @@ import {Args} from '@oclif/core'
 
 import {EnvCommand, environmentCommandFlags} from '../../lib/env-command.js'
 import {EnvInputError, parseKeys, unsetVariables} from '../../lib/env-text.js'
+import {successLine, warnLine} from '../../lib/style.js'
 
 export default class EnvUnset extends EnvCommand {
   static args = {
@@ -30,7 +31,7 @@ export default class EnvUnset extends EnvCommand {
     const current = await this.reveal(resolved, 'change')
     const result = unsetVariables(current.variables, keys)
     if (result.missing.length > 0) {
-      this.warn(`Not set in ${resolved.label}: ${result.missing.join(', ')}`)
+      this.logToStderr(warnLine(`Not set in ${resolved.label}: ${result.missing.join(', ')}`))
     }
 
     if (result.removed.length === 0) {
@@ -43,7 +44,7 @@ export default class EnvUnset extends EnvCommand {
       expectedUpdatedAt: current.updatedAt,
       variables: result.text,
     })
-    this.log(`${resolved.label}: removed ${result.removed.join(', ')} (${saved.keys.length} variable${saved.keys.length === 1 ? '' : 's'} left)`)
+    this.log(successLine(`${resolved.label}: removed ${result.removed.join(', ')} (${saved.keys.length} variable${saved.keys.length === 1 ? '' : 's'} left)`))
     this.usedByNote(saved)
   }
 }

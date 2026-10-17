@@ -22,6 +22,7 @@ import {
   runningFileNames,
   summarizeDiff,
 } from '../lib/reinstall.js'
+import {stepLine, successLine, warnLine} from '../lib/style.js'
 import {commandExists, dockerRunning, dockerSocketGid, isRoot, waitForApi} from '../lib/system.js'
 
 const READY_TIMEOUT_MS = 120_000
@@ -115,7 +116,7 @@ export default class Reinstall extends Command {
           dockerAvailable ? await dockerCapture(['compose', 'version', '--short']) : undefined,
           dockerAvailable,
         )
-        if (note) this.warn(note)
+        if (note) this.logToStderr(warnLine(note))
       }
 
       this.log('\n(dry-run) Nothing was changed.')
@@ -152,17 +153,17 @@ export default class Reinstall extends Command {
     }
 
     if (pull) {
-      this.log('==> docker compose pull')
+      this.log(stepLine('docker compose pull'))
       await dockerInherit(pull, dir)
     }
 
-    this.log('==> docker compose up -d --force-recreate')
+    this.log(stepLine('docker compose up -d --force-recreate'))
     await dockerInherit(up, dir)
 
     const env = parseEnv(merge.content)
-    this.log('==> Waiting for the API to be ready')
+    this.log(stepLine('Waiting for the API to be ready'))
     const ready = await waitForApi(env.get('API_PORT') || '3001', READY_TIMEOUT_MS)
-    if (!ready) this.warn(`The API did not respond in the expected time — check \`docker compose ${files.map((f) => `-f ${f}`).join(' ')} logs api\` in ${dir}.`)
+    if (!ready) this.logToStderr(warnLine(`The API did not respond in the expected time — check \`docker compose ${files.map((f) => `-f ${f}`).join(' ')} logs api\` in ${dir}.`))
 
     const version = await dockerCapture(
       [...composeArgs(files, 'exec', '-T', 'api', 'node', '-p', "require('./package.json').version")],
@@ -170,7 +171,7 @@ export default class Reinstall extends Command {
     )
 
     this.log('')
-    this.log(`Done. aoox in ${dir} has been refreshed${version ? ` (version ${version})` : ''}.`)
+    this.log(successLine(`Done. aoox in ${dir} has been refreshed${version ? ` (version ${version})` : ''}.`))
     this.log(`  .env.dist keys added: ${merge.added.length > 0 ? merge.added.join(', ') : '(none)'}`)
     this.log(`  Backup of previous files: ${backupDir ?? '(no file changes, no backup needed)'}`)
     this.log(`  Open: ${env.get('WEB_ORIGIN') || 'http://localhost:3000'}`)
@@ -208,7 +209,7 @@ export default class Reinstall extends Command {
       if (name === '.env.dist') await chmod(`${backupDir}/${name}`, 0o600)
     }
 
-    this.log(`==> Backing up previous files to ${backupDir}`)
+    this.log(stepLine('Backing up previous files to', backupDir))
   }
 
   private async ensureDocker(): Promise<void> {
@@ -261,12 +262,12 @@ export default class Reinstall extends Command {
     this.log(`\n.env.dist: ${p.merge.added.length + p.merge.overridden.length > 0 ? 'merged (secrets and existing values kept)' : 'unchanged'}`)
     for (const k of p.merge.added) this.log(`  + ${k} (added)`)
     for (const k of p.merge.overridden) this.log(`  ~ ${k} (replaced per flag)`)
-    for (const w of p.merge.warnings) this.warn(w)
+    for (const w of p.merge.warnings) this.logToStderr(warnLine(w))
 
     this.log(`\n${OVERRIDE_FILE}: left untouched`)
     this.log(`Compose files: ${p.files.join(' + ')}${p.running ? ' (same as the running stack)' : ' (api container not found — using default rules)'}`)
     const dropped = runningFileNames(p.running).filter((n) => !p.files.includes(n))
-    if (dropped.length > 0) this.warn(`Compose files from the running stack are no longer in the folder and were skipped: ${dropped.join(', ')}`)
+    if (dropped.length > 0) this.logToStderr(warnLine(`Compose files from the running stack are no longer in the folder and were skipped: ${dropped.join(', ')}`))
     this.log('Commands:')
     if (p.pull) this.log(`  docker ${p.pull.join(' ')}`)
     this.log(`  docker ${p.up.join(' ')}`)

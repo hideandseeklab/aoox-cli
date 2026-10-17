@@ -5,6 +5,7 @@ import {api, ApiError} from '../../lib/api.js'
 import {MissingCredentialsError} from '../../lib/config.js'
 import {connectionFlags, loadCredentials} from '../../lib/flags.js'
 import {warnIfOutdated} from '../../lib/outdated.js'
+import {successLine, warnLine} from '../../lib/style.js'
 
 interface ClearPanelDomainResult {
   reopenUrl: null | string
@@ -37,7 +38,7 @@ export default class DomainClear extends Command {
       throw error
     }
 
-    await warnIfOutdated((m) => this.warn(m), this.config.version, config)
+    await warnIfOutdated((m) => this.logToStderr(warnLine(m)), this.config.version, config)
 
     if (!flags.yes) {
       const ok = await confirm({
@@ -65,7 +66,7 @@ export default class DomainClear extends Command {
       throw error
     }
 
-    this.log('Panel domain removed.')
+    this.log(successLine('Panel domain removed.'))
     this.log('The panel will restart for a few seconds to go back to IP access — the connection to this API will drop briefly.')
     this.log(`Reopen the dashboard at ${result.reopenUrl ?? 'http://<server IP>:3000'} afterwards.`)
     this.log('Run `aoox login` again with that address if you used the domain to sign in.')

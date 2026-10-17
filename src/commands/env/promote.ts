@@ -7,6 +7,7 @@ import {EnvCommand, ownerFlags, type Resolved, selectorFlags} from '../../lib/en
 import {planPromotion} from '../../lib/env-plan.js'
 import {EnvInputError, parseKeys} from '../../lib/env-text.js'
 import {connectionFlags} from '../../lib/flags.js'
+import {successLine} from '../../lib/style.js'
 
 export default class EnvPromote extends EnvCommand {
   static description =
@@ -79,7 +80,7 @@ export default class EnvPromote extends EnvCommand {
       return this.failFromApi(error, {environment: target.label, verb: 'change'})
     }
 
-    this.log(`${target.label}: promoted ${send.length} variable${send.length === 1 ? '' : 's'} from ${from.name} (a version was recorded)`)
+    this.log(successLine(`${target.label}: promoted ${send.length} variable${send.length === 1 ? '' : 's'} from ${from.name} (a version was recorded)`))
     this.usedByNote(saved.environment)
   }
 

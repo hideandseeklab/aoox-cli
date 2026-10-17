@@ -6,6 +6,7 @@ import {api, ApiError} from '../../lib/api.js'
 import {MissingCredentialsError} from '../../lib/config.js'
 import {connectionFlags, loadCredentials} from '../../lib/flags.js'
 import {warnIfOutdated} from '../../lib/outdated.js'
+import {successLine, warnLine} from '../../lib/style.js'
 
 /**
  * Puts the self-hosted registry behind the built-in proxy on its own domain
@@ -43,7 +44,7 @@ static flags = {
       throw error
     }
 
-    await warnIfOutdated((m) => this.warn(m), this.config.version, config)
+    await warnIfOutdated((m) => this.logToStderr(warnLine(m)), this.config.version, config)
 
     const registries = await api<Registry[]>(config, '/registries')
     const registry = registries.find((r) => r.type === 'self-hosted')
@@ -58,7 +59,7 @@ static flags = {
         body: {domain: flags.clear ? null : flags.set},
         method: 'PATCH',
       })
-      this.log(flags.clear ? `Domain removed. Registry is back at ${updated.url}.` : `Domain applied: ${updated.url}`)
+      this.log(successLine(flags.clear ? `Domain removed. Registry is back at ${updated.url}.` : `Domain applied: ${updated.url}`))
     } catch (error) {
       if (error instanceof ApiError && error.status === 400) {
         this.error(error.message, {
