@@ -1,6 +1,6 @@
 import type {CliConfig} from './config.js'
 
-import {explainNetworkError} from './discovery.js'
+import {describeNetworkError} from './discovery.js'
 
 /** Panel answered, but not with success. `status: 0` = never reached it. */
 export class ApiError extends Error {
@@ -60,7 +60,7 @@ export async function api<T>(config: Pick<CliConfig, 'token' | 'url'>, path: str
   } catch (error) {
     // fetch only rejects for transport problems (DNS, refused, TLS, timeout);
     // an HTTP error status resolves normally.
-    throw new ApiError(0, explainNetworkError(config.url, error))
+    throw new ApiError(0, await describeNetworkError(config.url, error))
   }
 
   if (response.status === 204) return undefined as T

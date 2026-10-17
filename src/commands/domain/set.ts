@@ -14,6 +14,7 @@ interface PanelDomainSettings {
 
 interface UpdatePanelDomainResult {
   proxyAutoProvisioned: boolean
+  restrictPortsNote: null | string
   settings: PanelDomainSettings
 }
 
@@ -28,11 +29,17 @@ export default class DomainSet extends Command {
   static examples = [
     '<%= config.bin %> <%= command.id %> --web panel.example.com --api api.example.com',
     '<%= config.bin %> <%= command.id %> --web panel.example.com --api api.example.com --acme-email you@example.com',
+    '<%= config.bin %> <%= command.id %> --web panel.example.com --api api.example.com --domain-only',
   ]
 static flags = {
     ...connectionFlags,
     'acme-email': Flags.string({description: "Email for the Let's Encrypt certificate"}),
     api: Flags.string({description: 'Domain for the panel API', required: true}),
+    'domain-only': Flags.boolean({
+      allowNo: true,
+      description:
+        'Only allow access through the domain: ports 3000/3001 listen on 127.0.0.1 only (default: keep the current setting). Use --no-domain-only to open them again. Make sure the domain works first, or you lose IP:port access',
+    }),
     web: Flags.string({description: 'Domain for the panel dashboard', required: true}),
   }
 
@@ -58,6 +65,7 @@ static flags = {
         body: {
           ...(flags['acme-email'] ? {acmeEmail: flags['acme-email']} : {}),
           apiHost: flags.api,
+          ...(flags['domain-only'] === undefined ? {} : {restrictPorts: flags['domain-only']}),
           webHost: flags.web,
         },
         method: 'PATCH',
@@ -74,6 +82,12 @@ static flags = {
 
     this.log(`Domain saved: ${flags.web} (dashboard), ${flags.api} (API).`)
     this.log('The panel will restart for a few seconds to apply it — the connection to this API will drop briefly.')
+
+    if (result.restrictPortsNote) {
+      this.log('')
+      this.warn('Access through IP:3000 / IP:3001 is closed once the panel restarts — use the domains above.')
+      this.log(result.restrictPortsNote)
+    }
 
     if (result.proxyAutoProvisioned) {
       this.log('')

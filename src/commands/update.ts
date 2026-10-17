@@ -11,6 +11,7 @@ import {
   PACKAGE_NAME,
   pickNewest,
 } from '../lib/self-update.js'
+import {errorLine} from '../lib/style.js'
 
 /**
  * Updates the CLI itself from the npm registry. Needs neither a login nor the
@@ -41,7 +42,7 @@ export default class Update extends Command {
     try {
       newest = pickNewest(await fetchPackument(), installed)
     } catch (error) {
-      this.logToStderr(`❌ ${(error as Error).message}`)
+      this.logToStderr(errorLine((error as Error).message))
       this.exit(1)
     }
 
@@ -71,7 +72,7 @@ export default class Update extends Command {
     this.log(`==> npm ${npmInstallArgs(newest).join(' ')}`)
     const code = await runNpm(npmInstallArgs(newest))
     if (code !== 0) {
-      this.logToStderr(`❌ npm exited with code ${code}. Run it yourself: npm i -g ${PACKAGE_NAME}@${newest}`)
+      this.logToStderr(errorLine(`npm exited with code ${code}. Run it yourself: npm i -g ${PACKAGE_NAME}@${newest}`))
       this.exit(1)
     }
 

@@ -4,6 +4,7 @@ import {chmod, copyFile, mkdir, readFile, rename, stat, writeFile} from 'node:fs
 import {resolve} from 'node:path'
 import {fileURLToPath} from 'node:url'
 
+import {overrideGuardMessage} from '../lib/compose-version.js'
 import {dockerCapture, dockerInherit} from '../lib/docker.js'
 import {
   backupStamp,
@@ -112,6 +113,16 @@ export default class Reinstall extends Command {
     }
 
     await this.ensureDocker()
+
+    // The override written by "Only allow access through the domain" needs Compose >= 2.24.4 (!override);
+    // stop before anything is backed up, rewritten or recreated.
+    if (files.includes(OVERRIDE_FILE)) {
+      const guard = overrideGuardMessage(
+        await readIfExists(`${dir}/${OVERRIDE_FILE}`),
+        await dockerCapture(['compose', 'version', '--short']),
+      )
+      if (guard) this.error(guard)
+    }
 
     if (!flags.yes) {
       const ok = await confirm({

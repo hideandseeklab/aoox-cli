@@ -97,9 +97,23 @@ npm run build
 npm link            # or: npm install -g .
 ```
 
+## Behind an antivirus or corporate proxy
+
+Antivirus HTTPS scanning (AVG, Avast, Kaspersky, ESET, Bitdefender) and corporate proxies (Zscaler,
+Netskope, Fortinet, Palo Alto) re-sign HTTPS traffic with their own root certificate, which is
+installed in the operating system's store but unknown to Node. On Node 22.19+ / 24.5+ aoox trusts
+the system store in addition to Node's bundled list, so this works without any setup. Certificate
+verification is never turned off.
+
+- `AOOX_SYSTEM_CA=0` opts out (Node's bundled list only).
+- `NODE_EXTRA_CA_CERTS=<root.pem>` still works and is kept.
+- On older Node, set `NODE_OPTIONS=--use-system-ca` (Node 22.15+/23.10+), or upgrade Node, or add the panel's domain to the antivirus HTTPS-scanning exclusions.
+- If verification still fails because of an unknown issuer, the error names the issuer it saw.
+
 # Commands
 <!-- commands -->
 * [`aoox deploy`](#aoox-deploy)
+* [`aoox domain clear`](#aoox-domain-clear)
 * [`aoox domain set`](#aoox-domain-set)
 * [`aoox env diff`](#aoox-env-diff)
 * [`aoox env history`](#aoox-env-history)
@@ -165,13 +179,38 @@ EXAMPLES
 
 _See code: [src/commands/deploy.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.11/src/commands/deploy.ts)_
 
+## `aoox domain clear`
+
+Remove the custom domain of the panel itself and go back to IP access (IP:3000) through the running panel API
+
+```
+USAGE
+  $ aoox domain clear [-t <value>] [-u <value>] [-y]
+
+FLAGS
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                       https://dashboard.example.com); defaults to the value from `aoox login`
+  -y, --yes            Do not ask for confirmation
+
+DESCRIPTION
+  Remove the custom domain of the panel itself and go back to IP access (IP:3000) through the running panel API
+
+EXAMPLES
+  $ aoox domain clear
+
+  $ aoox domain clear --yes
+```
+
+_See code: [src/commands/domain/clear.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.11/src/commands/domain/clear.ts)_
+
 ## `aoox domain set`
 
 Set a custom domain for the panel itself (not an application) through the running panel API
 
 ```
 USAGE
-  $ aoox domain set --api <value> --web <value> [-t <value>] [-u <value>] [--acme-email <value>]
+  $ aoox domain set --api <value> --web <value> [-t <value>] [-u <value>] [--acme-email <value>] [--domain-only]
 
 FLAGS
   -t, --token=<value>       [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
@@ -179,6 +218,9 @@ FLAGS
                             https://dashboard.example.com); defaults to the value from `aoox login`
       --acme-email=<value>  Email for the Let's Encrypt certificate
       --api=<value>         (required) Domain for the panel API
+      --[no-]domain-only    Only allow access through the domain: ports 3000/3001 listen on 127.0.0.1 only (default:
+                            keep the current setting). Use --no-domain-only to open them again. Make sure the domain
+                            works first, or you lose IP:port access
       --web=<value>         (required) Domain for the panel dashboard
 
 DESCRIPTION
@@ -188,6 +230,8 @@ EXAMPLES
   $ aoox domain set --web panel.example.com --api api.example.com
 
   $ aoox domain set --web panel.example.com --api api.example.com --acme-email you@example.com
+
+  $ aoox domain set --web panel.example.com --api api.example.com --domain-only
 ```
 
 _See code: [src/commands/domain/set.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.11/src/commands/domain/set.ts)_
@@ -1270,6 +1314,7 @@ EXAMPLES
 _See code: [src/commands/whoami.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.11/src/commands/whoami.ts)_
 <!-- commandsstop -->
 * [`aoox deploy`](#aoox-deploy)
+* [`aoox domain clear`](#aoox-domain-clear)
 * [`aoox domain set`](#aoox-domain-set)
 * [`aoox env list`](#aoox-env-list)
 * [`aoox env pull`](#aoox-env-pull)
@@ -1327,13 +1372,38 @@ EXAMPLES
 
 _See code: [src/commands/deploy.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.8/src/commands/deploy.ts)_
 
+## `aoox domain clear`
+
+Remove the custom domain of the panel itself and go back to IP access (IP:3000) through the running panel API
+
+```
+USAGE
+  $ aoox domain clear [-t <value>] [-u <value>] [-y]
+
+FLAGS
+  -t, --token=<value>  [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>    [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                       https://dashboard.example.com); defaults to the value from `aoox login`
+  -y, --yes            Do not ask for confirmation
+
+DESCRIPTION
+  Remove the custom domain of the panel itself and go back to IP access (IP:3000) through the running panel API
+
+EXAMPLES
+  $ aoox domain clear
+
+  $ aoox domain clear --yes
+```
+
+_See code: [src/commands/domain/clear.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.11/src/commands/domain/clear.ts)_
+
 ## `aoox domain set`
 
 Set a custom domain for the panel itself (not an application) through the running panel API
 
 ```
 USAGE
-  $ aoox domain set --api <value> --web <value> [-t <value>] [-u <value>] [--acme-email <value>]
+  $ aoox domain set --api <value> --web <value> [-t <value>] [-u <value>] [--acme-email <value>] [--domain-only]
 
 FLAGS
   -t, --token=<value>       [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
@@ -1341,6 +1411,9 @@ FLAGS
                             https://dashboard.example.com); defaults to the value from `aoox login`
       --acme-email=<value>  Email for the Let's Encrypt certificate
       --api=<value>         (required) Domain for the panel API
+      --[no-]domain-only    Only allow access through the domain: ports 3000/3001 listen on 127.0.0.1 only (default:
+                            keep the current setting). Use --no-domain-only to open them again. Make sure the domain
+                            works first, or you lose IP:port access
       --web=<value>         (required) Domain for the panel dashboard
 
 DESCRIPTION
@@ -1350,6 +1423,8 @@ EXAMPLES
   $ aoox domain set --web panel.example.com --api api.example.com
 
   $ aoox domain set --web panel.example.com --api api.example.com --acme-email you@example.com
+
+  $ aoox domain set --web panel.example.com --api api.example.com --domain-only
 ```
 
 _See code: [src/commands/domain/set.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0-alpha.8/src/commands/domain/set.ts)_

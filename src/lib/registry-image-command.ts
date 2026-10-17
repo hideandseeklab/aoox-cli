@@ -11,6 +11,7 @@ import {ImageNameError, parseImageName, registryHost, suggestNextVersion} from '
 import {warnIfOutdated} from './outdated.js'
 import {manifestExistsAnywhere, registryBaseUrls, RegistryCheckError} from './registry-check.js'
 import {chooseRegistry, localhostRegistryHint} from './registry-select.js'
+import {errorLine} from './style.js'
 
 /** Longest image reference the API accepts for `imageRef`. */
 const MAX_REF_LENGTH = 300
@@ -37,10 +38,10 @@ export const registryImageFlags = {
 
 /** Shared by `aoox registry build` and `aoox registry push`. */
 export abstract class RegistryImageCommand extends Command {
-  /** Prints `❌ first line` plus plain hint lines to stderr and exits 1. */
+  /** Prints an `error` label plus the first line plus plain hint lines to stderr and exits 1. */
   protected fail(...lines: string[]): never {
     for (const [i, line] of lines.entries()) {
-      this.logToStderr(i === 0 ? `❌ ${line}` : line)
+      this.logToStderr(i === 0 ? errorLine(line) : line)
     }
 
     this.exit(1)

@@ -15,6 +15,7 @@ import {
 } from '../lib/env-run.js'
 import {hasReferences, toRecord} from '../lib/env-text.js'
 import {type BannerSource, colorEnabled, formatBanner, formatWarning, makeStyle} from '../lib/run-banner.js'
+import {errorLine} from '../lib/style.js'
 import {mergeForRun, type RunLayer, type RunMerge} from '../lib/variable-sets.js'
 
 /** First match of `command` on PATH using PATHEXT (Windows), or undefined. */
@@ -187,8 +188,8 @@ export default class Run extends EnvCommand {
       child.on('error', (error: NodeJS.ErrnoException) => {
         this.logToStderr(
           error.code === 'ENOENT'
-            ? `❌ Command not found: ${program}`
-            : `❌ Could not start ${program}: ${error.message}`,
+            ? errorLine(`Command not found: ${program}`)
+            : errorLine(`Could not start ${program}: ${error.message}`),
         )
         done(error.code === 'ENOENT' ? 127 : 126)
       })

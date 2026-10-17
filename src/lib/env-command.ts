@@ -16,6 +16,7 @@ import {MissingCredentialsError} from './config.js'
 import {connectionFlags, loadCredentials} from './flags.js'
 import {type LinkFile, readLink} from './link.js'
 import {warnIfOutdated} from './outdated.js'
+import {errorLine} from './style.js'
 import {pickEnvironment, pickSet, SelectionError} from './variable-sets.js'
 
 /** `--app` / `--stack`: which application or compose stack; default = the one linked with `aoox link`. */
@@ -100,10 +101,10 @@ export abstract class EnvCommand extends Command {
     return {config, link}
   }
 
-  /** Prints `❌ first line` plus plain hint lines to stderr and exits 1. */
+  /** Prints an `error` label plus the first line plus plain hint lines to stderr and exits 1. */
   protected fail(...lines: string[]): never {
     for (const [i, line] of lines.entries()) {
-      this.logToStderr(i === 0 ? `❌ ${line}` : line)
+      this.logToStderr(i === 0 ? errorLine(line) : line)
     }
 
     this.exit(1)

@@ -1,4 +1,5 @@
 import {isIP} from 'node:net'
+import tls from 'node:tls'
 
 import {normalizeUrl} from './config.js'
 
@@ -45,6 +46,19 @@ const TLS_CODES = new Set([
   'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
   'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
 ])
+
+/** Codes meaning "the chain ends in an authority Node does not know" (antivirus / proxy re-signing, private CA). */
+const UNKNOWN_ISSUER_CODES = new Set([
+  'SELF_SIGNED_CERT_IN_CHAIN',
+  'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+  'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+])
+
+/** The Node error code of a failed `fetch` (undici puts it on `cause`). */
+export function errorCode(error: unknown): string {
+  const err = error as {cause?: {code?: string}; code?: string}
+  return err?.cause?.code ?? err?.code ?? ''
+}
 
 /** `localhost`, `127.x`, `::1` — an API URL like this is useless from another machine. */
 export function isLoopbackHost(hostname: string): boolean {
@@ -130,8 +144,23 @@ export function classifyFetchError(error: unknown, url: string): Failure {
   return 'unreachable'
 }
 
+export interface FailureDetail {
+  /** Name of the CA that signed the certificate the server presented, when it could be read. */
+  issuer?: null | string
+  /** The failure is an unknown-issuer one (see `UNKNOWN_ISSUER_CODES`). */
+  unknownIssuer?: boolean
+}
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname
+  } catch {
+    return url
+  }
+}
+
 /** The human sentence for a failure. `url` is the address that was tried. */
-export function explainFailure(failure: Failure, url: string): string {
+export function explainFailure(failure: Failure, url: string, detail: FailureDetail = {}): string {
   switch (failure) {
     case 'invalid-url': {
       return `"${url}" is not a valid address.`
@@ -150,6 +179,14 @@ export function explainFailure(failure: Failure, url: string): string {
     }
 
     case 'tls': {
+      if (detail.unknownIssuer) {
+        const host = hostOf(url)
+        const who = detail.issuer
+          ? `was issued by "${detail.issuer}", which Node does not trust`
+          : 'is signed by an authority Node does not trust'
+        return `Could not verify ${url}: the certificate ${who}. An antivirus or proxy is probably inspecting HTTPS. Fix: add ${host} to the antivirus HTTPS-scanning exclusions, point NODE_EXTRA_CA_CERTS at that root certificate, or (older Node) set NODE_OPTIONS=--use-system-ca. On Node 22.19+ / 24.5+ aoox also trusts the system certificate store, unless AOOX_SYSTEM_CA=0.`
+      }
+
       return `The TLS certificate of ${url} is not trusted (expired, self-signed or issued for another name). Fix the certificate, or use the http:// address if the panel has no domain yet.`
     }
 
@@ -159,9 +196,83 @@ export function explainFailure(failure: Failure, url: string): string {
   }
 }
 
-/** Message for a failed request to an already known URL (used by `api()`). */
+/** Message for a failed request to an already known URL, without any network lookup. */
 export function explainNetworkError(url: string, error: unknown): string {
   return explainFailure(classifyFetchError(error, url), url)
+}
+
+export type IssuerLookup = (url: string) => Promise<null | string>
+
+/**
+ * Read who signed the certificate a server presents, **only to name it in an
+ * error message**. Certificate verification is switched off for this one
+ * handshake because it already failed; nothing is ever written to the socket
+ * (no request, no credentials) and it is destroyed as soon as the certificate
+ * is read. Never throws; `null` when it cannot be read.
+ */
+export function peekIssuer(url: string, timeoutMs = 3000): Promise<null | string> {
+  return new Promise((resolve) => {
+    let target: URL
+    try {
+      target = new URL(url)
+    } catch {
+      resolve(null)
+      return
+    }
+
+    if (target.protocol !== 'https:') {
+      resolve(null)
+      return
+    }
+
+    const host = target.hostname.replaceAll(/^\[|\]$/g, '')
+    let socket: tls.TLSSocket | undefined
+    const finish = (value: null | string) => {
+      socket?.destroy()
+      resolve(value)
+    }
+
+    try {
+      socket = tls.connect({
+        host,
+        port: target.port ? Number(target.port) : 443,
+        // Verification is skipped on purpose: this socket only reads the issuer name (see above).
+        rejectUnauthorized: false,
+        servername: isIP(host) === 0 ? host : undefined,
+      })
+    } catch {
+      resolve(null)
+      return
+    }
+
+    socket.setTimeout(timeoutMs, () => finish(null))
+    socket.once('error', () => finish(null))
+    socket.once('secureConnect', () => {
+      const issuer = socket?.getPeerCertificate().issuer as undefined | {CN?: string | string[]; O?: string | string[]}
+      const name = [issuer?.CN, issuer?.O].flat().find((v): v is string => typeof v === 'string' && v.trim() !== '')
+      finish(name ?? null)
+    })
+  })
+}
+
+/**
+ * Like `explainNetworkError`, but for an unknown-issuer certificate failure it
+ * looks up the issuer once so the message can name it.
+ */
+export async function describeNetworkError(url: string, error: unknown, lookup: IssuerLookup = peekIssuer): Promise<string> {
+  const failure = classifyFetchError(error, url)
+  if (failure === 'tls' && UNKNOWN_ISSUER_CODES.has(errorCode(error))) {
+    let issuer: null | string = null
+    try {
+      issuer = await lookup(url)
+    } catch {
+      issuer = null
+    }
+
+    return explainFailure('tls', url, {issuer, unknownIssuer: true})
+  }
+
+  return explainFailure(failure, url)
 }
 
 type FetchFn = typeof fetch
@@ -218,7 +329,7 @@ async function probe(fetchFn: FetchFn, base: string): Promise<ProbeOk> {
       return {kind: 'api'}
     }
   } catch (error) {
-    throw new DiscoveryError(classifyFetchError(error, base), explainNetworkError(base, error))
+    throw new DiscoveryError(classifyFetchError(error, base), await describeNetworkError(base, error))
   }
 
   throw new DiscoveryError('not-aoox', explainFailure('not-aoox', base))

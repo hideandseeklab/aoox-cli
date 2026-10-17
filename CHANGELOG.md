@@ -8,6 +8,22 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+### Added
+
+- `aoox domain clear` (with `--yes`) removes the panel's custom domain and goes back to IP access (`http://<server IP>:3000`), asking for confirmation first. Applications and their domains are not touched.
+- `aoox domain set --domain-only` (and `--no-domain-only` to undo it) turns on the panel's "only allow access through the domain" option: ports 3000/3001 then listen on 127.0.0.1 only. Needs both `--web` and `--api`; the command prints the recovery steps in case the domain stops working. Omitting the flag keeps the current setting.
+
+### Fixed
+
+- `aoox reinstall` stops before changing anything when `docker-compose.override.yml` uses the `!override` tag (the dashboard option "Only allow access through the domain") and the host's Docker Compose is older than 2.24.4 or its version cannot be read. The message says to upgrade the Compose plugin or turn that option off in the dashboard first. `aoox install` and `aoox update` do not run the override on the host, so they need no check.
+- The bundled `docker-compose.dist.yml` passes the optional `TRUST_PROXY` to the api service (which proxy hops may set the client IP); `aoox install` does not write it into a new `.env.dist`.
+- **Works behind antivirus HTTPS scanning and corporate proxies.** Every request to the panel failed with "The TLS certificate … is not trusted" when an antivirus (AVG, Avast, Kaspersky, ESET, Bitdefender) or proxy (Zscaler, Netskope, Fortinet, Palo Alto) re-signed HTTPS with a root that is installed in the OS store only. The CLI now trusts the operating system's certificate store in addition to Node's bundled list (and `NODE_EXTRA_CA_CERTS`) on Node 22.19+ / 24.5+; older Node keeps today's behaviour. Certificate verification is never disabled. Set `AOOX_SYSTEM_CA=0` to opt out.
+- Error lines no longer start with an emoji whose width some terminals miscount (the text looked glued to it); they start with a red `error` label, like the `warn` label of `aoox run`.
+
+### Changed
+
+- An unknown-issuer certificate error now names the issuer (for example "AVG Web/Mail Shield Root") and says an antivirus or proxy is probably inspecting HTTPS, with the fixes: antivirus exclusion, `NODE_EXTRA_CA_CERTS`, or `NODE_OPTIONS=--use-system-ca` on older Node. Expired, self-signed and wrong-name certificates keep their wording.
+
 ## [0.1.0-alpha.11] - 2026-10-15
 
 ### Fixed
