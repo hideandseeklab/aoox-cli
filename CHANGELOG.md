@@ -20,6 +20,7 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ### Fixed
 
+- `aoox run` says so when the panel hides the application's own environment from you (a project viewer gets no env text from aoox-api now) and stops before starting the command, instead of silently running without the application's own variables. Viewers could not reveal set environments anyway.
 - `aoox install` on a machine whose Docker still has the panel's database volume (`aoox_postgres_data`) from an earlier installation, with an empty or deleted install folder, now stops before writing anything. A fresh install would generate a new `POSTGRES_PASSWORD` that cannot open the old data. The message offers to restore the old `.env.dist` (the newest copy in `<dir>/backups/` is named) and run `aoox reinstall`, or to start clean with `--force --new-secrets --wipe-data`, which now also removes those leftover volumes. Other named volumes the bundled compose declares are checked the same way.
 - `aoox update panel` prints the panel's message when it cannot look up an image (for example a custom `API_IMAGE` the registry does not serve) instead of `ApiError: Internal server error`, and shows `lookup failed` for that image.
 

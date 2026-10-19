@@ -159,6 +159,8 @@ export interface LinkView {
 export interface LinkOwnerDetail {
   /** The owner's own `KEY=VALUE` text; it always wins over the linked sets. */
   env: null | string
+  /** True when the panel left `env` out because the caller is a project viewer. */
+  envHidden?: boolean
   id: string
   name: string
   projectId: string

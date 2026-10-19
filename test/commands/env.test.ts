@@ -286,6 +286,20 @@ describe('aoox env commands (fake panel)', () => {
     expect(stderr).to.contain('DB')
   })
 
+  it('aoox run refuses clearly when the panel hides the env from a viewer', async () => {
+    fakePanel(({path}) => {
+      if (path === '/applications/app-1') {
+        return {body: {env: null, envHidden: true, id: 'app-1', name: 'web', projectId: 'p1', variableSets: [link('e-dev', 'development', 0)]}}
+      }
+
+      return {status: 404}
+    })
+    const {error, stderr} = await runCommand(['run', '--app', 'app-1', ...base, '--', 'node', '-e', '0'])
+    expect(error?.oclif?.exit).to.equal(1)
+    expect(stderr).to.contain('cannot read its environment')
+    expect(calls.map((c) => c.path)).to.not.include('/variable-sets/set-1/environments/e-dev/reveal')
+  })
+
   describe('aoox run banner', () => {
     const child = ['--', 'node', '-e', '0']
 

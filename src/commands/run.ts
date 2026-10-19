@@ -121,6 +121,14 @@ export default class Run extends EnvCommand {
   private async linkedVariables(flags: {app?: string; stack?: string; token?: string; url?: string}): Promise<RunResult> {
     const {config, link} = await this.connect(flags)
     const owner = (await this.resolveOwner(config, link, flags, true))!
+    // A viewer gets no env text, so running would silently drop the own env.
+    if (owner.detail.envHidden) {
+      this.fail(
+        `${owner.label}: your role in this project cannot read its environment.`,
+        "Ask a developer or admin of the project, or use --set/--env for a set environment you may read.",
+      )
+    }
+
     const links = [...owner.detail.variableSets].sort((a, b) => a.position - b.position)
     const layers: RunLayer[] = []
     // One at a time, in order: a refused reveal (protected, viewer, token
