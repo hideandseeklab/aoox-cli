@@ -1,12 +1,13 @@
 import {confirm} from '@inquirer/prompts'
 import {Command, Flags} from '@oclif/core'
-import {chmod, copyFile, mkdir, readFile, rename, stat, writeFile} from 'node:fs/promises'
+import {readFile, rename, stat, writeFile} from 'node:fs/promises'
 import {resolve} from 'node:path'
 import {fileURLToPath} from 'node:url'
 
 import {overrideDryRunNote, overrideGuardMessage} from '../lib/compose-version.js'
 import {dockerCapture, dockerInherit} from '../lib/docker.js'
 import {
+  backupInstallFiles,
   backupStamp,
   chooseComposeFiles,
   composeArgs,
@@ -199,16 +200,7 @@ export default class Reinstall extends Command {
   }
 
   private async backup(dir: string, backupDir: string, present: Set<string>): Promise<void> {
-    await mkdir(backupDir, {mode: 0o700, recursive: true})
-    for (const name of ['.env.dist', ...present]) {
-      const src = `${dir}/${name}`
-      // eslint-disable-next-line no-await-in-loop
-      await copyFile(src, `${backupDir}/${name}`)
-      // .env.dist holds the secrets — the copy must be just as private.
-      // eslint-disable-next-line no-await-in-loop
-      if (name === '.env.dist') await chmod(`${backupDir}/${name}`, 0o600)
-    }
-
+    await backupInstallFiles(dir, backupDir, present)
     this.log(stepLine('Backing up previous files to', backupDir))
   }
 

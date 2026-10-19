@@ -737,8 +737,8 @@ Install aoox (postgres + api + web) on a fresh VPS with Docker Compose
 ```
 USAGE
   $ aoox install [--acme-email <value>] [--admin-name <value> --admin-email <value>] [--admin-password
-    <value> ] [--api-domain <value> --web-domain <value>] [--dir <value>] [--force] [--no-terminal-authorize]
-    [--terminal-ssh-user <value>] [-y]
+    <value> ] [--api-domain <value> --web-domain <value>] [--confirm-wipe <value>] [--dir <value>] [--force] [--new-secrets]
+    [--no-terminal-authorize] [--terminal-ssh-user <value>] [--wipe-data] [-y]
 
 FLAGS
   -y, --yes                        Do not ask for any confirmation
@@ -748,12 +748,19 @@ FLAGS
       --admin-password=<value>     Password of the first owner (min. 8 characters)
       --api-domain=<value>         Domain for the API, served through the bundled proxy
       --dir=<value>                [default: /opt/aoox] Installation directory
-      --force                      Overwrite an existing installation in --dir
+      --confirm-wipe=<value>       Non-interactive confirmation for --wipe-data: must be exactly the install directory
+                                   (--yes alone is not enough)
+      --force                      Reinstall over an existing installation in --dir: previous files are backed up to
+                                   <dir>/backups/ and existing secrets and values are kept (data survives)
+      --new-secrets                Only with --force --wipe-data: generate new secrets for a completely fresh install
+                                   (DELETES all panel data)
       --no-terminal-authorize      Do not create/authorize the web Terminal SSH key automatically (do it in Settings >
                                    Terminal instead)
       --terminal-ssh-user=<value>  SSH user the web Terminal uses to log in to this host (default: the user running
                                    sudo, or root if there is none)
       --web-domain=<value>         Domain for the web panel, served through the bundled proxy
+      --wipe-data                  Only with --force --new-secrets: run `docker compose down -v` first, removing the
+                                   panel database volume (DELETES all panel data)
 
 DESCRIPTION
   Install aoox (postgres + api + web) on a fresh VPS with Docker Compose

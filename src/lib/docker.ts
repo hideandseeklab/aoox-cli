@@ -11,9 +11,9 @@ export class DockerCommandError extends Error {
 }
 
 /** Runs `docker <args>` with the child's stdout/stderr shown as-is (docker's own output is already readable). */
-export function dockerInherit(args: string[], cwd: string): Promise<void> {
+export function dockerInherit(args: string[], cwd: string, env?: NodeJS.ProcessEnv): Promise<void> {
   return new Promise((resolve, reject) => {
-    const child = spawn('docker', args, {cwd, stdio: 'inherit'})
+    const child = spawn('docker', args, {cwd, env: env ? {...process.env, ...env} : undefined, stdio: 'inherit'})
     child.on('error', (error: NodeJS.ErrnoException) => {
       reject(
         error.code === 'ENOENT'

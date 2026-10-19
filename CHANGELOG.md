@@ -14,6 +14,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ### Changed
 
+- `aoox install --force` no longer breaks an existing installation. It always backs up `.env.dist` and the compose files to `<dir>/backups/<time>/` first, and by default keeps the existing secrets and values (a clean reinstall that keeps the data). Before, it wrote new `POSTGRES_PASSWORD`/`JWT_SECRET`/`ENCRYPTION_KEY` without a backup while the old database volume kept the old password, so the API could no longer connect.
+- A truly fresh install now needs `--force --new-secrets --wipe-data`: it runs `docker compose down -v` (the database volume is deleted) and asks you to type the install folder, or `--confirm-wipe=<dir>` when non-interactive (`--yes` alone is not enough). `--new-secrets` or `--wipe-data` on their own, or without `--force`, are refused.
 - The bundled `docker-compose.dist.yml` matches aoox-api: `REGISTRY_PUBLISH_ADDRESS` (registry port bound to 127.0.0.1 unless set), `REGISTRY_INTERNAL_URL=http://aoox-registry:5000` and `TZ` (default UTC) for schedules. `aoox install` and `aoox reinstall` write none of the new optional variables; the compose coverage and reinstall tests list them as intentionally omitted. `aoox install` already records the detected public IP as `PUBLIC_IP`, which the dashboard uses for the registry address once the port is exposed.
 
 ## [0.1.0-alpha.12] - 2026-10-17

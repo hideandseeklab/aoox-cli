@@ -249,3 +249,32 @@ export function summarizeDiff(before: string, after: string, max = 30): {added: 
 export function backupStamp(d = new Date()): string {
   return d.toISOString().replaceAll(/[:.]/g, '-')
 }
+
+/**
+ * Copies `.env.dist` plus the given compose files (those that exist) to
+ * `backupDir` (mode 700; the `.env.dist` copy 600 because it holds the
+ * secrets). Shared by `aoox reinstall` and `aoox install --force`. Returns the
+ * names that were copied.
+ */
+export async function backupInstallFiles(dir: string, backupDir: string, names: Iterable<string>): Promise<string[]> {
+  const {chmod, copyFile, mkdir, stat} = await import('node:fs/promises')
+  await mkdir(backupDir, {mode: 0o700, recursive: true})
+  const copied: string[] = []
+  for (const name of new Set(['.env.dist', ...names])) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      await stat(`${dir}/${name}`)
+    } catch {
+      continue
+    }
+
+    // eslint-disable-next-line no-await-in-loop
+    await copyFile(`${dir}/${name}`, `${backupDir}/${name}`)
+    // .env.dist holds the secrets — the copy must be just as private.
+    // eslint-disable-next-line no-await-in-loop
+    if (name === '.env.dist') await chmod(`${backupDir}/${name}`, 0o600)
+    copied.push(name)
+  }
+
+  return copied
+}
