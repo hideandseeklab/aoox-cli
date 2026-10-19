@@ -5,9 +5,10 @@ import {chmod, copyFile, mkdir, readFile, rm, stat, writeFile} from 'node:fs/pro
 import {resolve} from 'node:path'
 import {fileURLToPath} from 'node:url'
 
-import {dockerInherit} from '../lib/docker.js'
+import {dockerCapture, dockerInherit} from '../lib/docker.js'
 import {buildEnvFile, resolveTerminalSshUser} from '../lib/install-env.js'
 import {explicitOverrides, type InstallPlan, planInstall, wipeWarning} from '../lib/install-plan.js'
+import {composeProjectName, declaredVolumeNames, latestEnvBackup, leftoverVolumes} from '../lib/leftover-volumes.js'
 import {
   backupInstallFiles,
   backupStamp,
@@ -80,7 +81,7 @@ export default class Install extends Command {
     'wipe-data': Flags.boolean({
       default: false,
       description:
-        'Only with --force --new-secrets: run `docker compose down -v` first, removing the panel database volume (DELETES all panel data)',
+        'Only with --force --new-secrets: run `docker compose down -v` first, removing the panel database volume (and any leftover panel volumes from an earlier install) (DELETES all panel data)',
     }),
     yes: Flags.boolean({char: 'y', default: false, description: 'Do not ask for any confirmation (does not confirm a wipe)'}),
   }
@@ -94,6 +95,8 @@ export default class Install extends Command {
     const existingEnv = await readIfExists(`${dir}/.env.dist`)
     const existingCompose = await readIfExists(`${dir}/${DIST_FILE}`)
     const present = await this.presentFiles(dir)
+    const assets = fileURLToPath(new URL('../../assets/install/', import.meta.url))
+    const leftover = existingEnv === undefined && existingCompose === undefined ? await this.findLeftoverVolumes(assets) : []
     const plan = planInstall({
       composeExists: existingCompose !== undefined,
       confirmWipe: flags['confirm-wipe'] === undefined ? undefined : resolve(flags['confirm-wipe']),
@@ -102,6 +105,8 @@ export default class Install extends Command {
       force: flags.force,
       hasSecrets: existingEnv !== undefined && REQUIRED_SECRETS.every((k) => Boolean(parseEnv(existingEnv).get(k))),
       interactive: Boolean(process.stdin.isTTY),
+      latestBackup: leftover.length > 0 ? await latestEnvBackup(dir) : undefined,
+      leftoverVolumes: leftover,
       newSecrets: flags['new-secrets'],
       wipeData: flags['wipe-data'],
       yes: flags.yes,
@@ -109,19 +114,18 @@ export default class Install extends Command {
     if (plan.kind === 'error') this.error(plan.message, {suggestions: plan.suggestions})
 
     await this.ensureDocker(flags.yes)
-    await this.confirmPlan(plan, dir, flags.yes)
+    await this.confirmPlan(plan, dir, flags.yes, leftover)
 
     // Never overwrite an existing install without a copy of what is being replaced.
-    if (plan.kind !== 'fresh') {
+    if (plan.kind !== 'fresh' && (present.size > 0 || existingEnv !== undefined)) {
       const backupDir = `${dir}/backups/${backupStamp()}`
       await backupInstallFiles(dir, backupDir, present)
       this.log(stepLine('Backed up the previous files to', backupDir))
     }
 
-    if (plan.kind === 'wipe') await this.wipe(dir, present, existingEnv !== undefined)
+    if (plan.kind === 'wipe') await this.wipe(dir, present, existingEnv !== undefined, leftover)
 
     await mkdir(dir, {recursive: true})
-    const assets = fileURLToPath(new URL('../../assets/install/', import.meta.url))
     await copyFile(`${assets}${DIST_FILE}`, `${dir}/${DIST_FILE}`)
     const domainMode = Boolean(flags['web-domain'])
     // A reinstall that keeps data also keeps (and refreshes) a domain compose file that is already there.
@@ -233,9 +237,9 @@ export default class Install extends Command {
     }
   }
 
-  private async confirmPlan(plan: InstallPlan, dir: string, yes: boolean): Promise<void> {
+  private async confirmPlan(plan: InstallPlan, dir: string, yes: boolean, leftover: string[]): Promise<void> {
     if (plan.kind === 'wipe') {
-      for (const line of wipeWarning(dir)) this.logToStderr(warnLine(line))
+      for (const line of wipeWarning(dir, leftover)) this.logToStderr(warnLine(line))
       if (plan.confirm === 'typed') {
         const typed = await input({message: `Type the install directory (${dir}) to confirm that all panel data is deleted:`})
         if (resolve(typed.trim()) !== dir) this.error('The typed path does not match — nothing was changed.')
@@ -276,6 +280,17 @@ export default class Install extends Command {
     }
   }
 
+  /**
+   * Data volumes of an earlier installation that are still on this Docker host while the install folder is
+   * empty. Only asked when Docker already runs: without Docker there cannot be any.
+   */
+  private async findLeftoverVolumes(assets: string): Promise<string[]> {
+    if (!(commandExists('docker') && dockerRunning())) return []
+    const declared = declaredVolumeNames(await readFile(`${assets}${DIST_FILE}`, 'utf8'))
+    const existing = (await dockerCapture(['volume', 'ls', '--format', '{{.Name}}'])).split(/\r?\n/).filter(Boolean)
+    return leftoverVolumes(declared, existing)
+  }
+
   private async presentFiles(dir: string): Promise<Set<string>> {
     const found = new Set<string>()
     for (const name of [DIST_FILE, DOMAIN_FILE, OVERRIDE_FILE]) {
@@ -289,6 +304,29 @@ export default class Install extends Command {
     }
 
     return found
+  }
+
+  /**
+   * Volumes from an earlier installation whose folder is gone (so there is no compose file to `down -v` with).
+   * Removes the stack's own containers that still hold them, then the volumes. A volume that is still in use by
+   * anything else makes docker refuse, and the install stops there with docker's own message.
+   */
+  private async removeLeftoverVolumes(volumes: string[]): Promise<void> {
+    const assets = fileURLToPath(new URL('../../assets/install/', import.meta.url))
+    const project = composeProjectName(await readFile(`${assets}${DIST_FILE}`, 'utf8'))
+    this.log(stepLine(`Removing leftover volumes: ${volumes.join(', ')}`))
+    for (const volume of volumes) {
+      const holders = (
+        // eslint-disable-next-line no-await-in-loop
+        await dockerCapture(['ps', '-aq', '--filter', `volume=${volume}`, '--filter', `label=com.docker.compose.project=${project}`])
+      )
+        .split(/\r?\n/)
+        .filter(Boolean)
+      // eslint-disable-next-line no-await-in-loop
+      if (holders.length > 0) await dockerInherit(['rm', '-f', ...holders], '/')
+      // eslint-disable-next-line no-await-in-loop
+      await dockerInherit(['volume', 'rm', volume], '/')
+    }
   }
 
   /** Reuse mode: the existing `.env.dist` is merged, never regenerated; only explicit flags replace values. */
@@ -340,7 +378,7 @@ export default class Install extends Command {
   }
 
   /** `docker compose down -v` for the existing stack (dist + domain file only: the override just changes ports/labels). */
-  private async wipe(dir: string, present: Set<string>, hasEnv: boolean): Promise<void> {
+  private async wipe(dir: string, present: Set<string>, hasEnv: boolean, leftover: string[]): Promise<void> {
     this.log(stepLine('Removing the existing stack and its volumes (docker compose down -v)'))
     if (present.has(DIST_FILE)) {
       const files = [DIST_FILE, ...(present.has(DOMAIN_FILE) ? [DOMAIN_FILE] : [])]
@@ -352,6 +390,8 @@ export default class Install extends Command {
             POSTGRES_PASSWORD: 'x',
           }))
     }
+
+    if (leftover.length > 0) await this.removeLeftoverVolumes(leftover)
 
     // Settings of the wiped database no longer exist; the backup keeps the old copies.
     await rm(`${dir}/${OVERRIDE_FILE}`, {force: true})

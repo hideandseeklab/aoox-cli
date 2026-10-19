@@ -132,6 +132,13 @@ npm link            # or: npm install -g .
 
 Names are lowercased; a `+` in a version becomes `_` (tags cannot contain it). A value that cannot be read with certainty (an MSBuild `$(...)` or Maven `${...}` variable, `version.workspace`) is skipped. If HEAD is past the last tag the CLI refuses instead of guessing (tag it, type `name:version`, or `--force` to use the `git describe` form `1.4.2-3-gabc1234`). Because the result is derived, the CLI prints where it came from and asks `Build web:1.4.2? (Y/n/e)` first (`Y` continue, `n` abort, `e` edit); `--yes` skips the question, and without a terminal (or with `CI` set) it refuses and asks for `name:version` or `--yes`. A fully typed `name:version` never asks. The "version already exists" check still applies, so forgetting to bump the version never overwrites an image.
 
+## Installing on a machine that still has panel data
+
+`aoox install` in an empty folder (no `.env.dist`, no compose file) first asks Docker whether the panel's data volume (`aoox_postgres_data`, and any other named volume the bundled compose file declares) already exists. If it does, a fresh install would generate a new `POSTGRES_PASSWORD` that cannot open the old database, so the command stops before writing anything and tells you to either:
+
+- restore the old `.env.dist` (the message names the newest `<dir>/backups/<time>/` copy when there is one) and run `sudo aoox reinstall`, which keeps the data; or
+- start from scratch with `sudo aoox install --force --new-secrets --wipe-data`, which removes those volumes (and the stack's own containers that still use them) after you type the folder, or pass `--confirm-wipe=<dir>`.
+
 ## Colours
 
 Step lines (`==> ...`), results, warnings and hints are coloured when the output is a terminal. `NO_COLOR=1` turns colour off, `FORCE_COLOR=1` turns it on without a terminal (for example in some CI logs). Output meant for pipes (`aoox env pull` to stdout) and docker's own output are never coloured by the CLI.

@@ -8,8 +8,9 @@ import {successLine, warnLine} from '../../lib/style.js'
 
 interface ImageUpdateStatus {
   currentDigest: null | string
+  error?: null | string
   image: string
-  remoteDigest: string
+  remoteDigest: null | string
   updateAvailable: boolean
 }
 
@@ -51,10 +52,30 @@ export default class UpdatePanel extends Command {
 
     await warnIfOutdated((m) => this.logToStderr(warnLine(m)), this.config.version, config)
 
-    const status = await api<InstanceUpdateStatus>(config, '/instance/update')
+    let status: InstanceUpdateStatus
+    try {
+      status = await api<InstanceUpdateStatus>(config, '/instance/update')
+    } catch (error) {
+      if (error instanceof ApiError && error.status >= 500) {
+        this.error(`The panel could not check for updates: ${error.message}`, {
+          suggestions: ['Check the panel logs (docker compose logs api) and that API_IMAGE / WEB_IMAGE point at a reachable registry.'],
+        })
+      }
+
+      throw error
+    }
+
     this.log(`Running version: ${status.currentVersion}`)
     this.printImage('api', status.api)
     this.printImage('web', status.web)
+
+    const failed = [status.api, status.web].filter((image) => image.error)
+    for (const image of failed) this.logToStderr(warnLine(image.error ?? 'Registry lookup failed.'))
+    if (failed.length > 0 && !status.api.updateAvailable && !status.web.updateAvailable) {
+      this.error('Could not compare with the registry, so no update status is available.', {
+        suggestions: ['Set API_IMAGE / WEB_IMAGE in the panel .env.dist to images the registry serves, or check its connectivity.'],
+      })
+    }
 
     const available = status.api.updateAvailable || status.web.updateAvailable
     if (!available) {
@@ -76,6 +97,10 @@ export default class UpdatePanel extends Command {
         })
       }
 
+      if (error instanceof ApiError && error.status === 502) {
+        this.error(error.message)
+      }
+
       throw error
     }
 
@@ -83,7 +108,7 @@ export default class UpdatePanel extends Command {
   }
 
   private printImage(label: string, status: ImageUpdateStatus): void {
-    const state = status.currentDigest === null ? 'new baseline' : status.updateAvailable ? 'update available' : 'up to date'
+    const state = status.error ? 'lookup failed' : status.currentDigest === null ? 'new baseline' : status.updateAvailable ? 'update available' : 'up to date'
     this.log(`  ${label}: ${status.image} (${state})`)
   }
 }

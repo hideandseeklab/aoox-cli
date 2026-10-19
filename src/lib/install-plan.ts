@@ -20,6 +20,10 @@ export interface InstallPlanInput {
   hasSecrets: boolean
   /** A terminal is attached to stdin (a typed confirmation is possible). */
   interactive: boolean
+  /** Newest `<dir>/backups/<stamp>` that holds a `.env.dist` (for the hint when a database volume is left over). */
+  latestBackup?: string
+  /** Volumes the stack declares that already exist on this Docker host (empty when Docker is not installed yet). */
+  leftoverVolumes?: string[]
   newSecrets: boolean
   wipeData: boolean
   yes: boolean
@@ -66,7 +70,9 @@ export function planInstall(i: InstallPlanInput): InstallPlan {
   }
 
   const existing = i.composeExists || i.envExists
-  if (!existing) return {kind: 'fresh'}
+  const leftover = i.leftoverVolumes ?? []
+  if (!existing && leftover.length === 0) return {kind: 'fresh'}
+  if (!existing && !(i.newSecrets && i.wipeData)) return leftoverFailure(i, leftover)
 
   if (!i.force) {
     return fail(`An installation already exists in ${i.dir}.`, REINSTALL_HINT,
@@ -104,9 +110,22 @@ export function planInstall(i: InstallPlanInput): InstallPlan {
   return {backup: true, confirm: i.yes ? 'yes-flag' : 'prompt', kind: 'reuse'}
 }
 
+function leftoverFailure(i: InstallPlanInput, leftover: string[]): InstallPlan {
+  const restore = i.latestBackup
+    ? `Restore the old settings and repair in place (keeps the data): cp ${i.latestBackup}/.env.dist ${i.dir}/.env.dist && sudo aoox reinstall --dir ${i.dir}`
+    : `Restore the old .env.dist (POSTGRES_PASSWORD, JWT_SECRET, ENCRYPTION_KEY) into ${i.dir}/.env.dist from wherever you saved it, then run: sudo aoox reinstall --dir ${i.dir}`
+  return fail(
+    `Docker already has data volumes from an earlier aoox installation: ${leftover.join(', ')}. A new install would generate a new POSTGRES_PASSWORD that cannot open that data, and the API would never start. Nothing was changed.`,
+    restore,
+    'Or start from scratch and DELETE that data: sudo aoox install --force --new-secrets --wipe-data',
+  )
+}
+
 /** Text shown before a wipe — must say plainly what is lost. */
-export function wipeWarning(dir: string): string[] {
+export function wipeWarning(dir: string, leftover: string[] = []): string[] {
+  const left = leftover.length > 0 ? [`Leftover Docker volumes that are removed too: ${leftover.join(', ')}.`] : []
   return [
+    ...left,
     `This will PERMANENTLY DELETE the aoox panel data in ${dir}:`,
     '  - the panel database (users, projects, applications, domains, settings) — the postgres volume is removed with `docker compose down -v`',
     '  - every stored credential (registry, git, S3, notifications, 2FA, API tokens) — new secrets are generated',

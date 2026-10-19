@@ -18,6 +18,11 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 - A truly fresh install now needs `--force --new-secrets --wipe-data`: it runs `docker compose down -v` (the database volume is deleted) and asks you to type the install folder, or `--confirm-wipe=<dir>` when non-interactive (`--yes` alone is not enough). `--new-secrets` or `--wipe-data` on their own, or without `--force`, are refused.
 - The bundled `docker-compose.dist.yml` matches aoox-api: `REGISTRY_PUBLISH_ADDRESS` (registry port bound to 127.0.0.1 unless set), `REGISTRY_INTERNAL_URL=http://aoox-registry:5000` and `TZ` (default UTC) for schedules. `aoox install` and `aoox reinstall` write none of the new optional variables; the compose coverage and reinstall tests list them as intentionally omitted. `aoox install` already records the detected public IP as `PUBLIC_IP`, which the dashboard uses for the registry address once the port is exposed.
 
+### Fixed
+
+- `aoox install` on a machine whose Docker still has the panel's database volume (`aoox_postgres_data`) from an earlier installation, with an empty or deleted install folder, now stops before writing anything. A fresh install would generate a new `POSTGRES_PASSWORD` that cannot open the old data. The message offers to restore the old `.env.dist` (the newest copy in `<dir>/backups/` is named) and run `aoox reinstall`, or to start clean with `--force --new-secrets --wipe-data`, which now also removes those leftover volumes. Other named volumes the bundled compose declares are checked the same way.
+- `aoox update panel` prints the panel's message when it cannot look up an image (for example a custom `API_IMAGE` the registry does not serve) instead of `ApiError: Internal server error`, and shows `lookup failed` for that image.
+
 ## [0.1.0-alpha.12] - 2026-10-17
 
 ### Added
