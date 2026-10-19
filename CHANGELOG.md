@@ -8,6 +8,14 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+### Added
+
+- `aoox registry password --show` prints the self-hosted registry's address, username and password (owner/admin); `--reset --yes` resets the password (owner, images are kept; every client has to `docker login` again).
+
+### Changed
+
+- The bundled `docker-compose.dist.yml` matches aoox-api: `REGISTRY_PUBLISH_ADDRESS` (registry port bound to 127.0.0.1 unless set), `REGISTRY_INTERNAL_URL=http://aoox-registry:5000` and `TZ` (default UTC) for schedules. `aoox install` and `aoox reinstall` write none of the new optional variables; the compose coverage and reinstall tests list them as intentionally omitted. `aoox install` already records the detected public IP as `PUBLIC_IP`, which the dashboard uses for the registry address once the port is exposed.
+
 ## [0.1.0-alpha.12] - 2026-10-17
 
 ### Added

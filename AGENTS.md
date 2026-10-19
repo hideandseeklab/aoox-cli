@@ -278,6 +278,10 @@ the result through the existing `sourceType: 'image'` path:
 - npm dist-tags: `.github/workflows/npm-publish.yml` publishes an alpha under `--tag latest` (npm requires the explicit tag for a pre-release); `latest` is the only tag in use. There is no `alpha` tag any more (removed 2026-10-12): Trusted Publishing authorizes `npm publish` only, so a second tag could not be moved and went stale (alpha.8 shipped with `alpha` still on alpha.7). `pickNewest` still reads a channel tag if one exists, so an old one never blocks `aoox update`.
   First install hint everywhere: `npm i -g @hideandseeklab/aoox`; upgrade hint: `aoox update`.
 
+## `aoox registry password` (`src/commands/registry/password.ts`)
+
+- `--show` prints address, username and password from `GET /registries/:id/credentials` (owner/admin; the GET is not audit-logged, unlike the dashboard's reveal POST); `--reset` calls `POST /registries/self-hosted/password` (owner) and requires `--yes` because every client has to `docker login` again; images are untouched. The bundled compose copy gained `REGISTRY_PUBLISH_ADDRESS`, `TZ` and `REGISTRY_INTERNAL_URL=http://aoox-registry:5000`; `install-env-coverage`/`reinstall` tests list the two optional variables as intentionally omitted. `install-env.ts` already writes the detected `PUBLIC_IP` (used for the registry's external address once exposed), so no install change was needed. The README's command list is oclif-generated: run `npx oclif readme` at release time.
+
 ## `aoox registry build` / `push` (`src/commands/registry/{build,push}.ts`, `src/lib/{registry-image-command,registry-check,registry-select}.ts`, `image-ref.ts`)
 
 - Both extend `RegistryImageCommand` (abstract, in `lib/`; oclif only scans `dist/commands`): parse `[host/]name:version` with `parseImageName()` (lowercase repo path components, tag `\w[\w.-]{0,127}`, no digests; bare name → `❌ A version is required` + example), pick the registry with `chooseRegistry()`
