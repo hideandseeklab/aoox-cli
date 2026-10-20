@@ -8,6 +8,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+## [0.1.0-alpha.13] - 2026-10-20
+
 ### Added
 
 - `aoox registry password --show` prints the self-hosted registry's address, username and password (owner/admin); `--reset --yes` resets the password (owner, images are kept; every client has to `docker login` again).
@@ -260,7 +262,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 - `aoox install` — bootstrap aoox (postgres + api + web) on a fresh VPS via Docker Compose.
 - `aoox whoami` — show the account and panel currently in use.
 
-[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.12...HEAD
+[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.13...HEAD
+[0.1.0-alpha.13]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.12...v0.1.0-alpha.13
 [0.1.0-alpha.12]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.11...v0.1.0-alpha.12
 [0.1.0-alpha.11]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.10...v0.1.0-alpha.11
 [0.1.0-alpha.10]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.9...v0.1.0-alpha.10
