@@ -63,10 +63,18 @@ export default class RegistryPassword extends Command {
 
     try {
       if (flags.reset) {
-        const fresh = await api<{password: string; username: string}>(config, '/registries/self-hosted/password', {method: 'POST'})
+        // The reset answers with the username only; the new password is read through the audited reveal route.
+        const fresh = await api<{username: string}>(config, '/registries/self-hosted/password', {method: 'POST'})
         this.log(successLine('Password reset. Images were not touched.'))
         this.log(`  username: ${fresh.username}`)
-        this.log(`  password: ${fresh.password}`)
+        try {
+          const creds = await api<RegistryCredentials>(config, `/registries/${registry.id}/credentials/reveal`, {method: 'POST'})
+          this.log(`  password: ${creds.password ?? ''}`)
+        } catch {
+          // The reset already succeeded; only the read of the new password failed.
+          this.warn('Could not read the new password. Run `aoox registry password --show` to see it.')
+        }
+
         this.log(`Log in again with: docker login ${registry.url} -u ${fresh.username}`)
         return
       }

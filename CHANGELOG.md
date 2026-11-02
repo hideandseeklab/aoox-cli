@@ -8,6 +8,10 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+### Changed
+
+- **`aoox registry password --reset` reads the new password through the audited reveal route.** The API no longer returns the password in the reset response, so the command fetches it right after the reset (`POST /registries/:id/credentials/reveal`); the output is unchanged. Needs the matching API version.
+
 ## [0.1.0-alpha.13] - 2026-10-20
 
 ### Added
