@@ -22,16 +22,15 @@ export function channelOf(version: string): null | string {
 
 /**
  * Newest version to move to, or null when the installed one is already the
- * newest. A pre-release install follows the newest of `latest` and its own
- * channel tag (`alpha`); a stable install only ever sees stable versions.
- * Versions missing from `versions` or marked deprecated are skipped.
+ * newest. Every dist-tag is a candidate (`latest` plus channel tags such as
+ * `beta` or `rc`), so a pre-release install is offered the newest version
+ * whatever its label (alpha -> beta -> rc); a stable install only ever sees
+ * stable versions. Versions missing from `versions` or marked deprecated are skipped.
  */
 export function pickNewest(doc: Packument, installed: string): null | string {
   const tags = doc['dist-tags'] ?? {}
   const candidates = new Set<string>()
-  if (tags.latest) candidates.add(tags.latest)
-  const channel = channelOf(installed)
-  if (channel && tags[channel]) candidates.add(tags[channel])
+  for (const version of Object.values(tags)) candidates.add(version)
 
   const usable = [...candidates].filter((version) => {
     if (!isPreRelease(installed) && isPreRelease(version)) return false

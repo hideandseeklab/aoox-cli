@@ -32,6 +32,28 @@ describe('self-update', () => {
       expect(pickNewest(s, '1.0.0')).to.equal('1.0.1')
     })
 
+    it('alpha install moves to a beta published under latest', () => {
+      const b = doc({latest: '0.1.0-beta.1'}, ['0.1.0-alpha.13', '0.1.0-beta.1'])
+      expect(pickNewest(b, '0.1.0-alpha.13')).to.equal('0.1.0-beta.1')
+    })
+
+    it('alpha install sees a newer beta tag even when latest is older', () => {
+      const b = doc({beta: '0.2.0-beta.1', latest: '0.1.0-alpha.13'}, ['0.1.0-alpha.13', '0.2.0-beta.1'])
+      expect(pickNewest(b, '0.1.0-alpha.13')).to.equal('0.2.0-beta.1')
+    })
+
+    it('beta install moves to an rc, whether under latest or its own tag', () => {
+      const viaLatest = doc({latest: '0.1.0-rc.1'}, ['0.1.0-beta.2', '0.1.0-rc.1'])
+      expect(pickNewest(viaLatest, '0.1.0-beta.2')).to.equal('0.1.0-rc.1')
+      const viaTag = doc({latest: '0.1.0-beta.2', rc: '0.1.0-rc.1'}, ['0.1.0-beta.2', '0.1.0-rc.1'])
+      expect(pickNewest(viaTag, '0.1.0-beta.2')).to.equal('0.1.0-rc.1')
+    })
+
+    it('a stable install ignores pre-release channel tags', () => {
+      const s = doc({beta: '1.1.0-beta.1', latest: '1.0.0', rc: '1.0.1-rc.1'}, ['1.0.0', '1.1.0-beta.1', '1.0.1-rc.1'])
+      expect(pickNewest(s, '1.0.0')).to.equal(null)
+    })
+
     it('a pre-release install moves to a newer stable', () => {
       const s = doc({alpha: '0.1.0-alpha.7', latest: '0.1.0'}, ['0.1.0', '0.1.0-alpha.7'])
       expect(pickNewest(s, '0.1.0-alpha.7')).to.equal('0.1.0')

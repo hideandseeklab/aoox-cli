@@ -43,11 +43,16 @@ publish has to be done by hand:
    the other:
    - [`.github/workflows/npm-publish.yml`](.github/workflows/npm-publish.yml): builds, runs
      `npm test`, and publishes to npm via Trusted Publishing (see the one-time setup above — no
-     token needed once that's configured). The dist-tag is derived from the version's pre-release
-     label — an alpha (`0.1.0-alpha.1`) publishes under `latest`, the only tag we use (so a plain
-     `npm i -g @hideandseeklab/aoox` gets it; there is no `alpha` tag, because Trusted Publishing
-     may publish but not move tags and a second tag would go stale), `0.2.0-beta.0` under `beta`
-     only, and a version with no pre-release label (e.g. `1.0.0`) under `latest`.
+     token needed once that's configured). The dist-tag is derived from the version and
+     from whether the package has ever had a stable release (the workflow reads the public
+     registry, no auth; a failed lookup fails the job instead of guessing): a stable version
+     (`1.0.0`) always publishes under `latest`; while no stable version has been published, every
+     pre-release (`0.1.0-alpha.13`, `0.1.0-beta.1`, `0.1.0-rc.1`) also publishes under `latest`, so
+     a plain `npm i -g @hideandseeklab/aoox` gets the newest one; once a stable version exists,
+     pre-releases publish under their own channel tag (`1.1.0-beta.1` under `beta`) and never take
+     `latest`. There is no `alpha` tag and no `npm dist-tag add` step, because Trusted Publishing
+     may publish but not move tags. `aoox update` considers every dist-tag, so a pre-release
+     install is offered the newest version whatever its label, and a stable install only stable ones.
    - [`.github/workflows/release-tarballs.yml`](.github/workflows/release-tarballs.yml): packs
      standalone tarballs (`oclif pack tarballs`, bundled Node.js — see the "Standalone tarball
      install" section below) for `linux-x64`/`linux-arm64`/`darwin-x64`/`darwin-arm64`, and

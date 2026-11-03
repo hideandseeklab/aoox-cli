@@ -47,23 +47,42 @@ jobs:
       - name: Test
         run: npm test
 
-      # Dist-tag policy. A stable version (1.0.0) publishes as "latest". While the
-      # project is in alpha, every alpha publishes as "latest", the only tag we
-      # use, so a plain `npm i -g @hideandseeklab/aoox` gets the newest alpha.
-      # There is no separate "alpha" tag: Trusted Publishing may only publish, not
-      # move tags, so a second tag would go stale. Other pre-release labels (beta,
-      # rc) keep their own tag and never take "latest".
-      # npm needs an explicit --tag to publish a pre-release under "latest".
+      # Dist-tag policy. A stable version always publishes as "latest". While no
+      # stable version of the package has ever been published, every pre-release
+      # (alpha, beta, rc, ...) also publishes as "latest", so a plain
+      # `npm i -g @hideandseeklab/aoox` gets the newest one. Once a stable version
+      # exists, a pre-release publishes under its own channel tag (beta, rc, ...)
+      # and never takes "latest". Whether a stable version exists is read from the
+      # public registry (no auth); a failed lookup fails the job instead of guessing.
+      # Trusted Publishing (OIDC) may only publish, not move tags, so there is no
+      # `npm dist-tag add` step. npm needs an explicit --tag to publish a
+      # pre-release under "latest".
       - name: Derive npm dist-tag from version
         id: tag
         run: |
           VERSION=$(node -p "require('./package.json').version")
           if [[ "$VERSION" == *-* ]]; then
             LABEL=$(echo "$VERSION" | sed -E 's/^[^-]+-([a-zA-Z]+).*/\1/')
-            if [[ "$LABEL" == "alpha" ]]; then
-              TAG="latest"
+            NAME=$(node -p "require('./package.json').name")
+            # 404 = package never published: no stable version exists. Any other
+            # failure (network, 5xx) must not be mistaken for that.
+            CODE=$(curl -sS -o versions.json -w '%{http_code}' "https://registry.npmjs.org/${NAME/\//%2f}" -H 'accept: application/vnd.npm.install-v1+json') || { echo "::error::npm registry lookup failed"; exit 1; }
+            if [[ "$CODE" == "404" ]]; then
+              HAS_STABLE=false
+            elif [[ "$CODE" == "200" ]]; then
+              HAS_STABLE=$(node -e '
+                const doc = JSON.parse(require("fs").readFileSync("versions.json", "utf8"));
+                const versions = Object.keys(doc.versions ?? {});
+                console.log(versions.some((v) => !v.includes("-")));
+              ')
             else
+              echo "::error::npm registry answered HTTP $CODE"; exit 1
+            fi
+            rm -f versions.json
+            if [[ "$HAS_STABLE" == "true" ]]; then
               TAG="$LABEL"
+            else
+              TAG="latest"
             fi
           else
             TAG="latest"
