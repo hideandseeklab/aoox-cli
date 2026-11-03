@@ -8,9 +8,11 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+## [0.1.0-beta.0] - 2026-11-03
+
 ### Changed
 
-- **npm dist-tag policy.** While no stable version has been published, every pre-release (alpha, beta, rc) publishes under `latest`, so `npm i -g @hideandseeklab/aoox` installs the newest one (beta.1 no longer lands on a `beta` tag only). Once a stable version exists, pre-releases publish under their own channel tag and never take `latest`. The publish workflow checks the public registry for a stable version and fails if the lookup fails.
+- **npm dist-tag policy.** While no stable version has been published, every pre-release (alpha, beta, rc) publishes under `latest`, so `npm i -g @hideandseeklab/aoox` installs the newest one (a beta no longer lands on a `beta` tag only). Once a stable version exists, pre-releases publish under their own channel tag and never take `latest`. The publish workflow checks the public registry for a stable version and fails if the lookup fails.
 - **`aoox update` considers every dist-tag.** A pre-release install is offered the newest version whatever its label (alpha to beta to rc, also from a `beta`/`rc` tag); a stable install still only sees stable versions.
 - **`aoox registry password --reset` reads the new password through the audited reveal route.** The API no longer returns the password in the reset response, so the command fetches it right after the reset (`POST /registries/:id/credentials/reveal`); the output is unchanged. Needs the matching API version.
 
@@ -268,7 +270,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 - `aoox install` — bootstrap aoox (postgres + api + web) on a fresh VPS via Docker Compose.
 - `aoox whoami` — show the account and panel currently in use.
 
-[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.13...HEAD
+[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-beta.0...HEAD
+[0.1.0-beta.0]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.13...v0.1.0-beta.0
 [0.1.0-alpha.13]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.12...v0.1.0-alpha.13
 [0.1.0-alpha.12]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.11...v0.1.0-alpha.12
 [0.1.0-alpha.11]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.10...v0.1.0-alpha.11
