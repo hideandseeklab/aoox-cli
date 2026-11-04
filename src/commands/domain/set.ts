@@ -15,6 +15,7 @@ interface PanelDomainSettings {
 
 interface UpdatePanelDomainResult {
   proxyAutoProvisioned: boolean
+  proxyRecreated?: boolean
   restrictPortsNote: null | string
   settings: PanelDomainSettings
 }
@@ -88,6 +89,11 @@ static flags = {
       this.log('')
       this.logToStderr(warnLine('Access through IP:3000 / IP:3001 is closed once the panel restarts — use the domains above.'))
       this.log(result.restrictPortsNote)
+    }
+
+    if (result.proxyRecreated) {
+      this.log('')
+      this.logToStderr(warnLine('The reverse proxy was recreated once to enable HTTPS certificates (Let\'s Encrypt). Applications routed through it are unreachable for a few seconds.'))
     }
 
     if (result.proxyAutoProvisioned) {

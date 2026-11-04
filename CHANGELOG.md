@@ -8,6 +8,10 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+### Changed
+
+- **`aoox domain set` reports a proxy recreate** (needs the matching aoox-api): when the running proxy had no Let's Encrypt resolver and was recreated once to enable HTTPS, a warning says applications are unreachable for a few seconds.
+
 ## [0.1.0-beta.0] - 2026-11-03
 
 ### Changed
