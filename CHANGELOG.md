@@ -8,6 +8,10 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+### Added
+
+- **Bundled install compose passes `PROXY_READ_TIMEOUT`** to the api service (Traefik entrypoint read timeout, needs the matching aoox-api). It is an optional pass-through like `TRUST_PROXY`: a new install or `aoox reinstall` does not write it into `.env.dist`; set it from the dashboard (Infrastructure > Environment) or by hand.
+
 ### Changed
 
 - **`aoox domain set` reports a proxy recreate** (needs the matching aoox-api): when the running proxy had no Let's Encrypt resolver and was recreated once to enable HTTPS, a warning says applications are unreachable for a few seconds.

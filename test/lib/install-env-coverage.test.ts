@@ -20,6 +20,7 @@ describe('assets/install compose vs buildEnvFile coverage', () => {
     'API_IMAGE',
     'JWT_EXPIRES_IN',
     'PREVIEW_DOMAIN',
+    'PROXY_READ_TIMEOUT',
     'REGISTRY_PUBLISH_ADDRESS',
     'TRUST_PROXY',
     'TZ',
