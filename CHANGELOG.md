@@ -8,6 +8,12 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`aoox update panel --apply` shows the API's refusal for a pinned install** (409, needs the matching aoox-api) as a plain error message instead of a stack trace.
+- **`aoox update panel` no longer says "Already up to date" for a pinned install that has a newer release** (needs the matching aoox-api for the `version` block; older APIs behave as before). It prints the latest published version and, for an install pinned to a version tag, explains that the pin is why nothing moves and how to change it (set `API_IMAGE` / `WEB_IMAGE` in `.env.dist` or remove them, then `sudo aoox reinstall`). `--apply` on such an install refuses instead of reporting success for a version it did not move to.
+- **`aoox reinstall` always writes its backup folder**: `.env.dist` (mode 600) and the compose files are copied to `<dir>/backups/<time>/` before anything changes, also when nothing needs rewriting, so a restore point always holds the env. The dry-run still writes nothing and names the folder.
+
 ## [0.1.0-beta.1] - 2026-11-07
 
 ### Added

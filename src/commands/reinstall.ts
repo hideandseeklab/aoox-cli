@@ -144,10 +144,11 @@ export default class Reinstall extends Command {
       if (!ok) this.exit(0)
     }
 
-    let backupDir: string | undefined
+    // Always snapshot .env.dist + the compose files, even when nothing changes: the folder
+    // is the restore point for a full set of files.
+    const backupDir = `${dir}/backups/${backupStamp()}`
+    await this.backup(dir, backupDir, present)
     if (anyChange) {
-      backupDir = `${dir}/backups/${backupStamp()}`
-      await this.backup(dir, backupDir, present)
       if (composeChanged) await this.atomicWrite(`${dir}/${DIST_FILE}`, newCompose, 0o644)
       if (domainChanged && newDomain !== undefined) await this.atomicWrite(`${dir}/${DOMAIN_FILE}`, newDomain, 0o644)
       if (envChanged) await this.atomicWrite(envPath, merge.content, 0o600)
@@ -174,7 +175,7 @@ export default class Reinstall extends Command {
     this.log('')
     this.log(successLine(`Done. aoox in ${dir} has been refreshed${version ? ` (version ${version})` : ''}.`))
     this.log(`  .env.dist keys added: ${merge.added.length > 0 ? merge.added.join(', ') : '(none)'}`)
-    this.log(`  Backup of previous files: ${backupDir ?? '(no file changes, no backup needed)'}`)
+    this.log(`  Backup of previous files: ${backupDir}`)
     this.log(`  Open: ${env.get('WEB_ORIGIN') || 'http://localhost:3000'}`)
   }
 
@@ -256,6 +257,8 @@ export default class Reinstall extends Command {
     for (const k of p.merge.overridden) this.log(`  ~ ${k} (replaced per flag)`)
     for (const w of p.merge.warnings) this.logToStderr(warnLine(w))
 
+    this.log(`
+Backup: .env.dist and ${p.files.join(", ")} will be copied to ${p.dir}/backups/<timestamp>/ before anything changes`)
     this.log(`\n${OVERRIDE_FILE}: left untouched`)
     this.log(`Compose files: ${p.files.join(' + ')}${p.running ? ' (same as the running stack)' : ' (api container not found — using default rules)'}`)
     const dropped = runningFileNames(p.running).filter((n) => !p.files.includes(n))

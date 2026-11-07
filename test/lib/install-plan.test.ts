@@ -224,3 +224,19 @@ describe('backupInstallFiles', () => {
     expect(missing).to.equal(true)
   })
 })
+
+describe('backupInstallFiles when nothing changes', () => {
+  it('still copies .env.dist with mode 600', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'aoox-install-'))
+    try {
+      await writeFile(join(dir, '.env.dist'), 'JWT_SECRET=s\n')
+      const backup = join(dir, 'backups', 't2')
+      const copied = await backupInstallFiles(dir, backup, [])
+      expect(copied).to.deep.equal(['.env.dist'])
+      expect(await readFile(join(backup, '.env.dist'), 'utf8')).to.equal('JWT_SECRET=s\n')
+      if (process.platform !== 'win32') expect(((await stat(join(backup, '.env.dist'))).mode % 0o1000).toString(8)).to.equal('600')
+    } finally {
+      await rm(dir, {force: true, recursive: true})
+    }
+  })
+})

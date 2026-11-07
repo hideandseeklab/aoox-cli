@@ -4,6 +4,7 @@ import {api, ApiError} from '../../lib/api.js'
 import {MissingCredentialsError} from '../../lib/config.js'
 import {connectionFlags, loadCredentials} from '../../lib/flags.js'
 import {warnIfOutdated} from '../../lib/outdated.js'
+import {newerPublishedVersion, pinnedAdvice, type VersionBlock} from '../../lib/panel-update.js'
 import {successLine, warnLine} from '../../lib/style.js'
 
 interface ImageUpdateStatus {
@@ -19,6 +20,7 @@ interface InstanceUpdateStatus {
   checkedAt: null | string
   currentVersion: string
   installDirConfigured: boolean
+  version?: VersionBlock
   web: ImageUpdateStatus
 }
 
@@ -36,6 +38,7 @@ export default class UpdatePanel extends Command {
     apply: Flags.boolean({description: 'Apply the update if one is available (pull + restart)'}),
   }
 
+  // eslint-disable-next-line complexity -- linear orchestration: check, report, apply
   async run(): Promise<void> {
     const {flags} = await this.parse(UpdatePanel)
 
@@ -66,8 +69,10 @@ export default class UpdatePanel extends Command {
     }
 
     this.log(`Running version: ${status.currentVersion}`)
-    this.printImage('api', status.api)
-    this.printImage('web', status.web)
+    const newer = newerPublishedVersion(status.version, status.currentVersion)
+    const pinnedBehind = status.version?.tracking === 'pinned' && newer !== null
+    this.printImage('api', status.api, pinnedBehind)
+    this.printImage('web', status.web, pinnedBehind)
 
     const failed = [status.api, status.web].filter((image) => image.error)
     for (const image of failed) this.logToStderr(warnLine(image.error ?? 'Registry lookup failed.'))
@@ -78,6 +83,22 @@ export default class UpdatePanel extends Command {
     }
 
     const available = status.api.updateAvailable || status.web.updateAvailable
+    if (newer) this.log(`Latest published version: ${newer}`)
+
+    // A pinned tag never moves with pull, whatever the digests say (they differ from the baseline of the
+    // newer release), so applying cannot reach `newer`.
+    if (pinnedBehind && newer) {
+      for (const line of pinnedAdvice(newer, status.currentVersion)) this.logToStderr(warnLine(line))
+      if (flags.apply) this.error('Not applying: this install is pinned to a version tag, so the update would not change the version.')
+      return
+    }
+
+    if (!available && newer) {
+      // Following `latest` (or tracking unknown) but the digest check sees nothing: be honest, do not say "up to date".
+      this.log(`A newer version (${newer}) is published, but the image digests did not change yet. Check again shortly, or run \`aoox reinstall\` if this persists.`)
+      return
+    }
+
     if (!available) {
       this.log(successLine('Already up to date.'))
       return
@@ -97,7 +118,7 @@ export default class UpdatePanel extends Command {
         })
       }
 
-      if (error instanceof ApiError && error.status === 502) {
+      if (error instanceof ApiError && (error.status === 502 || error.status === 409)) {
         this.error(error.message)
       }
 
@@ -107,8 +128,8 @@ export default class UpdatePanel extends Command {
     this.log(successLine('Update applied — the panel will restart for a few seconds to apply it.'))
   }
 
-  private printImage(label: string, status: ImageUpdateStatus): void {
-    const state = status.error ? 'lookup failed' : status.currentDigest === null ? 'new baseline' : status.updateAvailable ? 'update available' : 'up to date'
+  private printImage(label: string, status: ImageUpdateStatus, pinnedBehind = false): void {
+    const state = pinnedBehind ? 'pinned to a version tag' : status.error ? 'lookup failed' : status.currentDigest === null ? 'new baseline' : status.updateAvailable ? 'update available' : 'up to date'
     this.log(`  ${label}: ${status.image} (${state})`)
   }
 }
