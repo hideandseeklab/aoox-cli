@@ -8,6 +8,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+## [0.1.0-beta.2] - 2026-11-07
+
 ### Changed
 
 - **README: requirements for `aoox install`**: a Linux server with root (Docker is installed for you if missing), 1 vCPU / 2 GB RAM plus swap minimum, 4 GB recommended, with a link to the Choosing a VPS docs.
@@ -290,7 +292,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 - `aoox install` — bootstrap aoox (postgres + api + web) on a fresh VPS via Docker Compose.
 - `aoox whoami` — show the account and panel currently in use.
 
-[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-beta.1...HEAD
+[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-beta.2...HEAD
+[0.1.0-beta.2]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-beta.1...v0.1.0-beta.2
 [0.1.0-beta.1]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-beta.0...v0.1.0-beta.1
 [0.1.0-beta.0]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.13...v0.1.0-beta.0
 [0.1.0-alpha.13]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.12...v0.1.0-alpha.13
