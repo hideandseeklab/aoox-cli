@@ -8,6 +8,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+## [0.1.0-beta.1] - 2026-11-07
+
 ### Added
 
 - **Bundled install compose passes `PROXY_READ_TIMEOUT`** to the api service (Traefik entrypoint read timeout, needs the matching aoox-api). It is an optional pass-through like `TRUST_PROXY`: a new install or `aoox reinstall` does not write it into `.env.dist`; set it from the dashboard (Infrastructure > Environment) or by hand.
@@ -278,7 +280,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 - `aoox install` — bootstrap aoox (postgres + api + web) on a fresh VPS via Docker Compose.
 - `aoox whoami` — show the account and panel currently in use.
 
-[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-beta.0...HEAD
+[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-beta.1...HEAD
+[0.1.0-beta.1]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-beta.0...v0.1.0-beta.1
 [0.1.0-beta.0]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.13...v0.1.0-beta.0
 [0.1.0-alpha.13]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.12...v0.1.0-alpha.13
 [0.1.0-alpha.12]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.11...v0.1.0-alpha.12
