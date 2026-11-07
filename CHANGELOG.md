@@ -8,6 +8,10 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+### Changed
+
+- **README: requirements for `aoox install`**: a Linux server with root (Docker is installed for you if missing), 1 vCPU / 2 GB RAM plus swap minimum, 4 GB recommended, with a link to the Choosing a VPS docs.
+
 ### Fixed
 
 - **`aoox update panel --apply` shows the API's refusal for a pinned install** (409, needs the matching aoox-api) as a plain error message instead of a stack trace.

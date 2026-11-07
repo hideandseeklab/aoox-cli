@@ -68,6 +68,11 @@ Node ≥22 must already be installed on that VPS **before** the step above (`aoo
 itself needs Node to run, so it cannot install Node for you first) — or use the install script
 above, which needs no Node.js on the VPS at all.
 
+## Requirements for `aoox install`
+
+- A Linux server with root access (run it with `sudo`). If Docker is missing or not running, `aoox install` offers to install it with `curl -fsSL https://get.docker.com | sh` (it does so without asking when you pass `--yes`) and stops if Docker still cannot start afterwards.
+- 1 vCPU and 2 GB RAM plus swap as the minimum (the tested size), 4 GB recommended. See [Choosing a VPS](https://aoox.dev/docs/fresh-vps).
+
 ## From source
 
 To install from source (e.g. to contribute, or to get the latest `main` before it is
