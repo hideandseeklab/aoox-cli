@@ -8,6 +8,14 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+### Added
+
+- `SECURITY.md` and an issue-template config that send bug reports to aoox-api's issue forms; the README has a "Report a bug" section.
+
+### Fixed
+
+- The README now describes the npm dist-tag policy the publish workflow actually uses (pre-releases take `latest` while no stable version exists).
+
 ## [0.1.0-rc.1] - 2026-11-09
 
 ### Changed

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a bug or request a feature
+    url: https://github.com/hideandseeklab/aoox-api/issues/new/choose
+    about: All aoox issues (API, dashboard, CLI, docs) are tracked in aoox-api.
+  - name: Report a security vulnerability
+    url: https://github.com/hideandseeklab/aoox-api/security/policy
+    about: Please report vulnerabilities privately, not in a public issue.

@@ -61,12 +61,17 @@ for every environment variable it accepts (pinning a version, a custom install d
 npm install -g @hideandseeklab/aoox
 ```
 
-While the project is in alpha every release is published under both the `latest` and `alpha` tags, so no tag is needed. To update later, run `aoox update` (`aoox update panel` updates the panel).
+While no stable version exists yet, every pre-release (alpha, beta, rc) is published under the `latest` tag, so no tag is needed. Once a stable version exists, pre-releases are published under their own channel tag (for example `rc`) and only stable versions take `latest`. To update later, run `aoox update` (`aoox update panel` updates the panel).
 
 `aoox` is then available globally. This also applies to `aoox install` on a new VPS —
 Node ≥22 must already be installed on that VPS **before** the step above (`aoox install`
 itself needs Node to run, so it cannot install Node for you first) — or use the install script
 above, which needs no Node.js on the VPS at all.
+
+## Report a bug
+
+Found a bug in the CLI (or any other aoox component)? Open an issue at
+[aoox-api issues](https://github.com/hideandseeklab/aoox-api/issues/new/choose); all aoox issues are tracked there.
 
 ## Requirements for `aoox install`
 
