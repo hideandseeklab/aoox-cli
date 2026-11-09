@@ -8,6 +8,12 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+## [0.1.0-rc.1] - 2026-11-09
+
+### Changed
+
+- No functional changes in this repository; the version is cut to stay in step with aoox-api and aoox-web.
+
 ## [0.1.0-beta.2] - 2026-11-07
 
 ### Changed
@@ -292,7 +298,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 - `aoox install` — bootstrap aoox (postgres + api + web) on a fresh VPS via Docker Compose.
 - `aoox whoami` — show the account and panel currently in use.
 
-[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-beta.2...HEAD
+[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-rc.1...HEAD
+[0.1.0-rc.1]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-beta.2...v0.1.0-rc.1
 [0.1.0-beta.2]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-beta.1...v0.1.0-beta.2
 [0.1.0-beta.1]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-beta.0...v0.1.0-beta.1
 [0.1.0-beta.0]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-alpha.13...v0.1.0-beta.0
