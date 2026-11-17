@@ -84,8 +84,8 @@ manual step during a normal release: `release-tarballs.yml` (see above) builds a
 every tag automatically, using whatever is checked in at that tag (so a `postversion`/README
 change from `npm version` is already included). If `install-cli.sh` itself needs a change (new env
 var, new platform), edit it directly in `aoox-landing/public/` — it doesn't need a matching version
-bump in `aoox-cli`, since it always resolves "latest" via the GitHub Releases API (or an explicit
-`AOOX_VERSION`) rather than pinning a version in its own source.
+bump in `aoox-cli`, since by default it resolves the newest *stable* release via the GitHub `/releases/latest` API
+(which skips pre-releases; pin one with an explicit `AOOX_VERSION`) rather than pinning a version in its own source.
 
 ## If the bundled compose files changed
 

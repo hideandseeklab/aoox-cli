@@ -27,7 +27,7 @@ $ npm install -g @hideandseeklab/aoox
 $ aoox COMMAND
 running command...
 $ aoox (--version)
-@hideandseeklab/aoox/0.1.0-rc.1 win32-x64 node-v24.12.0
+@hideandseeklab/aoox/0.1.0 win32-x64 node-v24.12.0
 $ aoox --help [COMMAND]
 USAGE
   $ aoox COMMAND
@@ -61,7 +61,7 @@ for every environment variable it accepts (pinning a version, a custom install d
 npm install -g @hideandseeklab/aoox
 ```
 
-While no stable version exists yet, every pre-release (alpha, beta, rc) is published under the `latest` tag, so no tag is needed. Once a stable version exists, pre-releases are published under their own channel tag (for example `rc`) and only stable versions take `latest`. To update later, run `aoox update` (`aoox update panel` updates the panel).
+Stable versions are published under the `latest` tag, so no tag is needed. Pre-releases are published under their own channel tag (for example `rc` or `beta`) and never take `latest`; install one explicitly with `npm install -g @hideandseeklab/aoox@rc`. (Before the first stable version, 0.1.0, every pre-release was published under `latest`.) To update later, run `aoox update` (`aoox update panel` updates the panel).
 
 `aoox` is then available globally. This also applies to `aoox install` on a new VPS —
 Node ≥22 must already be installed on that VPS **before** the step above (`aoox install`

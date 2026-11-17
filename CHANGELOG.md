@@ -8,13 +8,21 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-17
+
+First stable release. No functional changes since 0.1.0-rc.1; documentation only.
+
 ### Added
 
 - `SECURITY.md` and an issue-template config that send bug reports to aoox-api's issue forms; the README has a "Report a bug" section.
 
 ### Fixed
 
-- The README now describes the npm dist-tag policy the publish workflow actually uses (pre-releases take `latest` while no stable version exists).
+- The README now describes the npm dist-tag policy the publish workflow actually uses.
+
+### Changed
+
+- With this first stable version, npm `latest` is for stable versions only: later pre-releases publish under their own channel tag (`rc`, `beta`) and are never installed by a plain `npm i -g @hideandseeklab/aoox`. The publish workflow already did this once a stable version exists; the README and the docs now say it.
 
 ## [0.1.0-rc.1] - 2026-11-09
 
@@ -306,7 +314,8 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 - `aoox install` — bootstrap aoox (postgres + api + web) on a fresh VPS via Docker Compose.
 - `aoox whoami` — show the account and panel currently in use.
 
-[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-rc.1...HEAD
+[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-rc.1...v0.1.0
 [0.1.0-rc.1]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-beta.2...v0.1.0-rc.1
 [0.1.0-beta.2]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-beta.1...v0.1.0-beta.2
 [0.1.0-beta.1]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-beta.0...v0.1.0-beta.1
