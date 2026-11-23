@@ -204,6 +204,30 @@ export function chooseComposeFiles({present, runningConfigFiles}: ComposeFilesIn
   return [DIST_FILE, ...[DOMAIN_FILE, OVERRIDE_FILE].filter((n) => have.has(n))]
 }
 
+/** The panel's own app services; the panel database (`postgres`) is deliberately not one of them. */
+export const PANEL_SERVICES = ['api', 'web']
+
+export interface ReinstallCommands {
+  /** Brings every service to the (possibly rewritten) definition: recreates only what changed, e.g. postgres only when its own definition changed. */
+  converge: string[]
+  pull?: string[]
+  /** Fresh api/web containers; `--no-deps` so postgres is never restarted by this step. */
+  recreate: string[]
+}
+
+/**
+ * Commands of `aoox reinstall`. The old `pull` + `up -d --force-recreate` over every service restarted
+ * (and re-pulled) the panel's postgres on every run. Now only api/web are pulled and force-recreated;
+ * a final plain `up -d` converges the rest and leaves an unchanged postgres alone.
+ */
+export function reinstallCommands(files: string[], noPull: boolean): ReinstallCommands {
+  return {
+    converge: composeArgs(files, 'up', '-d'),
+    pull: noPull ? undefined : composeArgs(files, 'pull', ...PANEL_SERVICES),
+    recreate: composeArgs(files, 'up', '-d', '--force-recreate', '--no-deps', ...PANEL_SERVICES),
+  }
+}
+
 export function composeArgs(files: string[], ...rest: string[]): string[] {
   return ['compose', ...files.flatMap((f) => ['-f', f]), '--env-file', '.env.dist', ...rest]
 }

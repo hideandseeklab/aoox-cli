@@ -9,6 +9,7 @@ import {
   mergeEnv,
   MissingSecretsError,
   parseEnv,
+  reinstallCommands,
   repairDefaults,
   runningFileNames,
   summarizeDiff,
@@ -169,6 +170,25 @@ describe('chooseComposeFiles', () => {
 
   it('ignores a running list that does not include dist', () => {
     expect(chooseComposeFiles({present: [dist, override], runningConfigFiles: '/x/other.yml'})).to.deep.equal([dist, override])
+  })
+})
+
+describe('reinstallCommands', () => {
+  const files = ['docker-compose.dist.yml', 'docker-compose.override.yml']
+  const base = ['compose', '-f', files[0], '-f', files[1], '--env-file', '.env.dist']
+
+  it('pulls and force-recreates only api and web, never postgres', () => {
+    const c = reinstallCommands(files, false)
+    expect(c.pull).to.deep.equal([...base, 'pull', 'api', 'web'])
+    expect(c.recreate).to.deep.equal([...base, 'up', '-d', '--force-recreate', '--no-deps', 'api', 'web'])
+  })
+
+  it('converges the rest with a plain up -d (no force, no service list)', () => {
+    expect(reinstallCommands(files, true).converge).to.deep.equal([...base, 'up', '-d'])
+  })
+
+  it('--no-pull drops the pull', () => {
+    expect(reinstallCommands(files, true).pull).to.equal(undefined)
   })
 })
 

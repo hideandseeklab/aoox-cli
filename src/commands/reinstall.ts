@@ -19,6 +19,7 @@ import {
   MissingSecretsError,
   OVERRIDE_FILE,
   parseEnv,
+  reinstallCommands,
   repairDefaults,
   runningFileNames,
   summarizeDiff,
@@ -90,8 +91,7 @@ export default class Reinstall extends Command {
     const running = await this.runningStack(dir)
     const present = await this.presentFiles(dir, runningFileNames(running))
     const files = chooseComposeFiles({present, runningConfigFiles: running})
-    const pull = flags['no-pull'] ? undefined : composeArgs(files, 'pull')
-    const up = composeArgs(files, 'up', '-d', '--force-recreate')
+    const {converge, pull, recreate} = reinstallCommands(files, flags['no-pull'])
 
     const composeChanged = newCompose !== currentCompose
     const domainChanged = newDomain !== undefined && newDomain !== currentDomain
@@ -100,13 +100,14 @@ export default class Reinstall extends Command {
 
     this.printPlan({
       composeDiff: composeChanged ? summarizeDiff(currentCompose, newCompose) : undefined,
+      converge,
       dir,
       domainDiff: domainChanged ? summarizeDiff(currentDomain ?? '', newDomain ?? '') : undefined,
       files,
       merge,
       pull,
+      recreate,
       running,
-      up,
     })
 
     if (flags['dry-run']) {
@@ -159,8 +160,12 @@ export default class Reinstall extends Command {
       await dockerInherit(pull, dir)
     }
 
-    this.log(stepLine('docker compose up -d --force-recreate'))
-    await dockerInherit(up, dir)
+    this.log(stepLine('docker compose up -d --force-recreate --no-deps api web'))
+    await dockerInherit(recreate, dir)
+
+    // Only changes what actually differs (e.g. postgres when its own definition changed); never forced.
+    this.log(stepLine('docker compose up -d'))
+    await dockerInherit(converge, dir)
 
     const env = parseEnv(merge.content)
     this.log(stepLine('Waiting for the API to be ready'))
@@ -230,13 +235,14 @@ export default class Reinstall extends Command {
 
   private printPlan(p: {
     composeDiff?: ReturnType<typeof summarizeDiff>
+    converge: string[]
     dir: string
     domainDiff?: ReturnType<typeof summarizeDiff>
     files: string[]
     merge: ReturnType<typeof mergeEnv>
     pull?: string[]
+    recreate: string[]
     running?: string
-    up: string[]
   }): void {
     this.log(`Installation: ${p.dir}`)
     const show = (name: string, diff?: ReturnType<typeof summarizeDiff>) => {
@@ -265,7 +271,8 @@ Backup: .env.dist and ${p.files.join(", ")} will be copied to ${p.dir}/backups/<
     if (dropped.length > 0) this.logToStderr(warnLine(`Compose files from the running stack are no longer in the folder and were skipped: ${dropped.join(', ')}`))
     this.log('Commands:')
     if (p.pull) this.log(`  docker ${p.pull.join(' ')}`)
-    this.log(`  docker ${p.up.join(' ')}`)
+    this.log(`  docker ${p.recreate.join(' ')}`)
+    this.log(`  docker ${p.converge.join(' ')}`)
     this.log('Volumes left untouched.')
   }
 

@@ -8,6 +8,10 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+### Fixed
+
+- `aoox reinstall` no longer pulls and force-recreates every service, which restarted the panel's PostgreSQL on every run. It now pulls `api web`, force-recreates only those two (`--no-deps`), and ends with a plain `up -d` that recreates anything else (postgres included) only when its own definition changed. `aoox install` is unchanged.
+
 ## [0.1.1] - 2026-11-23
 
 Adds `aoox logs` and `aoox exec` to follow logs and open a shell in an application, a managed database or a compose stack service.
