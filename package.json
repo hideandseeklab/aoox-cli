@@ -34,7 +34,8 @@
     "@inquirer/prompts": "^8.7.2",
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
-    "@oclif/plugin-plugins": "^5"
+    "@oclif/plugin-plugins": "^5",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "@eslint/compat": "^1",

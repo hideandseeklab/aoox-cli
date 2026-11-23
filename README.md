@@ -151,10 +151,12 @@ verification is never turned off.
 * [`aoox env sets`](#aoox-env-sets)
 * [`aoox env unlink`](#aoox-env-unlink)
 * [`aoox env unset KEYS`](#aoox-env-unset-keys)
+* [`aoox exec`](#aoox-exec)
 * [`aoox help [COMMAND]`](#aoox-help-command)
 * [`aoox install`](#aoox-install)
 * [`aoox link`](#aoox-link)
 * [`aoox login`](#aoox-login)
+* [`aoox logs`](#aoox-logs)
 * [`aoox plugins`](#aoox-plugins)
 * [`aoox plugins add PLUGIN`](#aoox-plugins-add-plugin)
 * [`aoox plugins:inspect PLUGIN...`](#aoox-pluginsinspect-plugin)
@@ -696,6 +698,41 @@ EXAMPLES
 
 _See code: [src/commands/env/unset.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0/src/commands/env/unset.ts)_
 
+## `aoox exec`
+
+Open an interactive shell in the container of an application, a managed database or a compose stack service (bash if the image has it, else sh), like `docker exec -it`. The command exits with the shell's exit code
+
+```
+USAGE
+  $ aoox exec [-t <value>] [-u <value>] [--app <value> | --database <value> | --stack <value>] [--project
+    <value>] [--service <value> ]
+
+FLAGS
+  -t, --token=<value>     [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>       [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                          https://dashboard.example.com); defaults to the value from `aoox login`
+      --app=<value>       Application ID or name; defaults to the application linked with `aoox link`
+      --database=<value>  Managed database ID or name
+      --project=<value>   Project ID or name, to tell apart resources that share a name
+      --service=<value>   Service of the compose stack (required when the stack has more than one)
+      --stack=<value>     Compose stack ID or name
+
+DESCRIPTION
+  Open an interactive shell in the container of an application, a managed database or a compose stack service (bash if
+  the image has it, else sh), like `docker exec -it`. The command exits with the shell's exit code
+
+EXAMPLES
+  $ aoox exec
+
+  $ aoox exec --app web --project shop
+
+  $ aoox exec --database main-db
+
+  $ aoox exec --stack blog --service web
+```
+
+_See code: [src/commands/exec.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0/src/commands/exec.ts)_
+
 ## `aoox help [COMMAND]`
 
 Display help for aoox.
@@ -816,6 +853,50 @@ EXAMPLES
 ```
 
 _See code: [src/commands/login.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0/src/commands/login.ts)_
+
+## `aoox logs`
+
+Show the container logs of an application, a managed database or a compose stack service (with --follow: keep streaming). For an application, --deployment shows the build log of one deployment instead
+
+```
+USAGE
+  $ aoox logs [-t <value>] [-u <value>] [--app <value> | --database <value> | --stack <value>] [--project
+    <value>] [--deployment <value> | --tail <value> | [--service <value> ] | --timestamps] [-f]
+
+FLAGS
+  -f, --follow              Keep streaming new lines until Ctrl+C
+  -t, --token=<value>       [env: AOOX_TOKEN] API token (aoox_…); defaults to the value from `aoox login`
+  -u, --url=<value>         [env: AOOX_URL] Dashboard URL (the address you open the dashboard with, e.g.
+                            https://dashboard.example.com); defaults to the value from `aoox login`
+      --app=<value>         Application ID or name; defaults to the application linked with `aoox link`
+      --database=<value>    Managed database ID or name
+      --deployment=<value>  Show the build log of a deployment (an ID, or "latest") instead of the container logs; keeps
+                            following while it runs. Applications only
+      --project=<value>     Project ID or name, to tell apart resources that share a name
+      --service=<value>     Service of the compose stack (required when the stack has more than one)
+      --stack=<value>       Compose stack ID or name
+      --tail=<value>        [default: 200] How many of the last lines to show first (1-5000)
+      --timestamps          Keep the timestamp Docker puts in front of every line
+
+DESCRIPTION
+  Show the container logs of an application, a managed database or a compose stack service (with --follow: keep
+  streaming). For an application, --deployment shows the build log of one deployment instead
+
+EXAMPLES
+  $ aoox logs
+
+  $ aoox logs --follow --tail 50
+
+  $ aoox logs --app web --project shop
+
+  $ aoox logs --database main-db --tail 200
+
+  $ aoox logs --stack blog --service web --follow
+
+  $ aoox logs --deployment latest
+```
+
+_See code: [src/commands/logs.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.0/src/commands/logs.ts)_
 
 ## `aoox plugins`
 
