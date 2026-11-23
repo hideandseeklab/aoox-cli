@@ -8,6 +8,10 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-23
+
+Adds `aoox logs` and `aoox exec` to follow logs and open a shell in an application, a managed database or a compose stack service.
+
 ### Added
 
 - **`aoox logs` and `aoox exec`.** `aoox logs [-f] [--tail N] [--timestamps]` shows the container logs of an application, a managed database or a compose stack service (`--deployment <id|latest>` shows an application's deployment build log and follows it while it runs; Ctrl+C on a stream exits 130). `aoox exec` opens an interactive shell (bash if the image has it, else sh) with raw-mode input (Ctrl+C and Ctrl+D reach the remote shell), terminal resize, and the exit code of the remote shell; it refuses to run without a terminal. Target: `--app`, `--database` or `--stack` (an ID or a name, `--project` to tell apart same-named resources), `--service` for a stack; without any the linked application is used. Needs the dashboard address saved by `aoox login` (sent as the websocket `Origin`); older logins without it are asked to log in again. Uses `socket.io-client` and needs an API with the matching log/console tickets for databases and stacks.
@@ -318,7 +322,8 @@ First stable release. No functional changes since 0.1.0-rc.1; documentation only
 - `aoox install` — bootstrap aoox (postgres + api + web) on a fresh VPS via Docker Compose.
 - `aoox whoami` — show the account and panel currently in use.
 
-[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-rc.1...v0.1.0
 [0.1.0-rc.1]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-beta.2...v0.1.0-rc.1
 [0.1.0-beta.2]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-beta.1...v0.1.0-beta.2
