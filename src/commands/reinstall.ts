@@ -1,6 +1,6 @@
 import {confirm} from '@inquirer/prompts'
 import {Command, Flags} from '@oclif/core'
-import {readFile, rename, stat, writeFile} from 'node:fs/promises'
+import {copyFile, mkdir, readFile, rename, rm, stat, writeFile} from 'node:fs/promises'
 import {resolve} from 'node:path'
 import {fileURLToPath} from 'node:url'
 
@@ -17,6 +17,7 @@ import {
   DOMAIN_FILE,
   mergeEnv,
   MissingSecretsError,
+  orderedCommands,
   OVERRIDE_FILE,
   parseEnv,
   reinstallCommands,
@@ -145,6 +146,18 @@ export default class Reinstall extends Command {
       if (!ok) this.exit(0)
     }
 
+    // Pull first, from a staging copy of the NEW files, so a failed pull (registry
+    // unreachable, bad tag) leaves the installation untouched: no backup folder, no rewritten
+    // compose or .env.dist. The staged files decide which image references are pulled.
+    if (pull) {
+      this.log(stepLine('docker compose pull'))
+      await this.stagedPull(dir, files, pull, {
+        [DIST_FILE]: newCompose,
+        ...(newDomain === undefined ? {} : {[DOMAIN_FILE]: newDomain}),
+        '.env.dist': merge.content,
+      })
+    }
+
     // Always snapshot .env.dist + the compose files, even when nothing changes: the folder
     // is the restore point for a full set of files.
     const backupDir = `${dir}/backups/${backupStamp()}`
@@ -153,11 +166,6 @@ export default class Reinstall extends Command {
       if (composeChanged) await this.atomicWrite(`${dir}/${DIST_FILE}`, newCompose, 0o644)
       if (domainChanged && newDomain !== undefined) await this.atomicWrite(`${dir}/${DOMAIN_FILE}`, newDomain, 0o644)
       if (envChanged) await this.atomicWrite(envPath, merge.content, 0o600)
-    }
-
-    if (pull) {
-      this.log(stepLine('docker compose pull'))
-      await dockerInherit(pull, dir)
     }
 
     this.log(stepLine('docker compose up -d --force-recreate --no-deps api web'))
@@ -264,15 +272,17 @@ export default class Reinstall extends Command {
     for (const w of p.merge.warnings) this.logToStderr(warnLine(w))
 
     this.log(`
-Backup: .env.dist and ${p.files.join(", ")} will be copied to ${p.dir}/backups/<timestamp>/ before anything changes`)
+Backup: after a successful pull, .env.dist and ${p.files.join(", ")} will be copied to ${p.dir}/backups/<timestamp>/ before anything is rewritten`)
     this.log(`\n${OVERRIDE_FILE}: left untouched`)
     this.log(`Compose files: ${p.files.join(' + ')}${p.running ? ' (same as the running stack)' : ' (api container not found — using default rules)'}`)
     const dropped = runningFileNames(p.running).filter((n) => !p.files.includes(n))
     if (dropped.length > 0) this.logToStderr(warnLine(`Compose files from the running stack are no longer in the folder and were skipped: ${dropped.join(', ')}`))
-    this.log('Commands:')
-    if (p.pull) this.log(`  docker ${p.pull.join(' ')}`)
-    this.log(`  docker ${p.recreate.join(' ')}`)
-    this.log(`  docker ${p.converge.join(' ')}`)
+    this.log('Commands (in this order):')
+    for (const cmd of orderedCommands({converge: p.converge, pull: p.pull, recreate: p.recreate})) {
+      const note = cmd === p.pull ? '   (first, from a temporary copy of the new files: if it fails nothing on disk has changed)' : ''
+      this.log(`  docker ${cmd.join(' ')}${note}`)
+    }
+
     this.log('Volumes left untouched.')
   }
 
@@ -303,5 +313,32 @@ Backup: .env.dist and ${p.files.join(", ")} will be copied to ${p.dir}/backups/<
     if (!out) return undefined
     const [workdir, files] = out.split('|')
     return workdir && resolve(workdir) === dir && files ? files : undefined
+  }
+
+  /**
+   * Runs `docker compose pull` against a temporary folder holding the new compose files
+   * and merged .env.dist (other compose files such as the override are copied as they are).
+   * Pull only needs image references, so relative bind paths do not matter. The folder
+   * holds .env.dist (secrets), so it is mode 700 and always removed.
+   */
+  private async stagedPull(dir: string, files: string[], pull: string[], fresh: Record<string, string>): Promise<void> {
+    const staging = `${dir}/.reinstall-pull-${process.pid}`
+    await rm(staging, {force: true, recursive: true})
+    await mkdir(staging, {mode: 0o700})
+    try {
+      for (const name of files) {
+        // eslint-disable-next-line no-await-in-loop
+        if (!(name in fresh)) await copyFile(`${dir}/${name}`, `${staging}/${name}`)
+      }
+
+      for (const [name, content] of Object.entries(fresh)) {
+        // eslint-disable-next-line no-await-in-loop
+        await writeFile(`${staging}/${name}`, content, {mode: 0o600})
+      }
+
+      await dockerInherit(pull, staging)
+    } finally {
+      await rm(staging, {force: true, recursive: true})
+    }
   }
 }

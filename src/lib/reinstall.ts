@@ -228,6 +228,11 @@ export function reinstallCommands(files: string[], noPull: boolean): ReinstallCo
   }
 }
 
+/** Commands in execution order: the pull comes first (before any backup or rewrite). */
+export function orderedCommands(c: ReinstallCommands): string[][] {
+  return [...(c.pull ? [c.pull] : []), c.recreate, c.converge]
+}
+
 export function composeArgs(files: string[], ...rest: string[]): string[] {
   return ['compose', ...files.flatMap((f) => ['-f', f]), '--env-file', '.env.dist', ...rest]
 }

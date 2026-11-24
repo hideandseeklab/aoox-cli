@@ -8,6 +8,7 @@ import {
   composeVariables,
   mergeEnv,
   MissingSecretsError,
+  orderedCommands,
   parseEnv,
   reinstallCommands,
   repairDefaults,
@@ -185,6 +186,13 @@ describe('reinstallCommands', () => {
 
   it('converges the rest with a plain up -d (no force, no service list)', () => {
     expect(reinstallCommands(files, true).converge).to.deep.equal([...base, 'up', '-d'])
+  })
+
+  it('lists the pull first, then recreate, then converge; --no-pull starts at recreate', () => {
+    const withPull = reinstallCommands(files, false)
+    expect(orderedCommands(withPull)).to.deep.equal([withPull.pull, withPull.recreate, withPull.converge])
+    const without = reinstallCommands(files, true)
+    expect(orderedCommands(without)).to.deep.equal([without.recreate, without.converge])
   })
 
   it('--no-pull drops the pull', () => {

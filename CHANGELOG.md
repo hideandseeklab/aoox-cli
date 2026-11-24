@@ -11,6 +11,7 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 ### Fixed
 
 - `aoox reinstall` no longer pulls and force-recreates every service, which restarted the panel's PostgreSQL on every run. It now pulls `api web`, force-recreates only those two (`--no-deps`), and ends with a plain `up -d` that recreates anything else (postgres included) only when its own definition changed. `aoox install` is unchanged.
+- `aoox reinstall` now pulls the `api` and `web` images first, before the backup folder is created or any file is rewritten (the pull reads a temporary copy of the new compose files and merged `.env.dist`, so it still pulls the image references the new compose will run). A failed pull, for example an unreachable registry, used to leave a backup folder plus a rewritten compose file and `.env.dist` behind; now it changes nothing on disk. `--no-pull` and `--dry-run` (which prints the new order) are unchanged.
 
 ## [0.1.1] - 2026-11-23
 
