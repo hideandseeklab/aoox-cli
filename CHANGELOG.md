@@ -8,6 +8,10 @@ Versions below 1.0.0 may include breaking changes in a minor release.
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-24
+
+Makes `aoox reinstall` leave the panel's PostgreSQL alone unless its definition changed, and pull first so a failed pull changes nothing on disk.
+
 ### Fixed
 
 - `aoox reinstall` no longer pulls and force-recreates every service, which restarted the panel's PostgreSQL on every run. It now pulls `api web`, force-recreates only those two (`--no-deps`), and ends with a plain `up -d` that recreates anything else (postgres included) only when its own definition changed. `aoox install` is unchanged.
@@ -327,7 +331,8 @@ First stable release. No functional changes since 0.1.0-rc.1; documentation only
 - `aoox install` — bootstrap aoox (postgres + api + web) on a fresh VPS via Docker Compose.
 - `aoox whoami` — show the account and panel currently in use.
 
-[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-rc.1...v0.1.0
 [0.1.0-rc.1]: https://github.com/hideandseeklab/aoox-cli/compare/v0.1.0-beta.2...v0.1.0-rc.1
