@@ -27,7 +27,7 @@ $ npm install -g @hideandseeklab/aoox
 $ aoox COMMAND
 running command...
 $ aoox (--version)
-@hideandseeklab/aoox/0.1.1 win32-x64 node-v24.12.0
+@hideandseeklab/aoox/0.1.2 win32-x64 node-v24.12.0
 $ aoox --help [COMMAND]
 USAGE
   $ aoox COMMAND
@@ -204,7 +204,7 @@ EXAMPLES
   $ aoox deploy --tag v1.2.3
 ```
 
-_See code: [src/commands/deploy.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/deploy.ts)_
+_See code: [src/commands/deploy.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/deploy.ts)_
 
 ## `aoox domain clear`
 
@@ -229,7 +229,7 @@ EXAMPLES
   $ aoox domain clear --yes
 ```
 
-_See code: [src/commands/domain/clear.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/domain/clear.ts)_
+_See code: [src/commands/domain/clear.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/domain/clear.ts)_
 
 ## `aoox domain set`
 
@@ -261,7 +261,7 @@ EXAMPLES
   $ aoox domain set --web panel.example.com --api api.example.com --domain-only
 ```
 
-_See code: [src/commands/domain/set.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/domain/set.ts)_
+_See code: [src/commands/domain/set.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/domain/set.ts)_
 
 ## `aoox env diff`
 
@@ -294,7 +294,7 @@ EXAMPLES
   $ aoox env diff --set shared --from staging --to production
 ```
 
-_See code: [src/commands/env/diff.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/env/diff.ts)_
+_See code: [src/commands/env/diff.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/env/diff.ts)_
 
 ## `aoox env history`
 
@@ -330,7 +330,7 @@ EXAMPLES
   $ aoox env history --limit 5 --json
 ```
 
-_See code: [src/commands/env/history.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/env/history.ts)_
+_See code: [src/commands/env/history.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/env/history.ts)_
 
 ## `aoox env link`
 
@@ -364,7 +364,7 @@ EXAMPLES
   $ aoox env link --set defaults --env production --position 1
 ```
 
-_See code: [src/commands/env/link.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/env/link.ts)_
+_See code: [src/commands/env/link.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/env/link.ts)_
 
 ## `aoox env links`
 
@@ -394,7 +394,7 @@ EXAMPLES
   $ aoox env links --stack <id>
 ```
 
-_See code: [src/commands/env/links.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/env/links.ts)_
+_See code: [src/commands/env/links.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/env/links.ts)_
 
 ## `aoox env list`
 
@@ -436,7 +436,7 @@ EXAMPLES
   $ aoox env list --set shared --env development --reveal
 ```
 
-_See code: [src/commands/env/list.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/env/list.ts)_
+_See code: [src/commands/env/list.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/env/list.ts)_
 
 ## `aoox env promote`
 
@@ -471,7 +471,7 @@ EXAMPLES
   $ aoox env promote --from development --to staging --all --yes
 ```
 
-_See code: [src/commands/env/promote.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/env/promote.ts)_
+_See code: [src/commands/env/promote.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/env/promote.ts)_
 
 ## `aoox env pull`
 
@@ -515,7 +515,7 @@ EXAMPLES
   $ aoox env pull --format shell --file -
 ```
 
-_See code: [src/commands/env/pull.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/env/pull.ts)_
+_See code: [src/commands/env/pull.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/env/pull.ts)_
 
 ## `aoox env push`
 
@@ -549,7 +549,7 @@ EXAMPLES
   $ aoox env push --file .env.staging --set shared --env staging --yes
 ```
 
-_See code: [src/commands/env/push.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/env/push.ts)_
+_See code: [src/commands/env/push.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/env/push.ts)_
 
 ## `aoox env set ASSIGNMENTS`
 
@@ -588,7 +588,7 @@ EXAMPLES
   $ aoox env set API_TOKEN=abc123 --secret
 ```
 
-_See code: [src/commands/env/set.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/env/set.ts)_
+_See code: [src/commands/env/set.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/env/set.ts)_
 
 ## `aoox env sets`
 
@@ -662,7 +662,7 @@ EXAMPLES
   $ aoox env unlink --position 2
 ```
 
-_See code: [src/commands/env/unlink.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/env/unlink.ts)_
+_See code: [src/commands/env/unlink.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/env/unlink.ts)_
 
 ## `aoox env unset KEYS`
 
@@ -696,7 +696,7 @@ EXAMPLES
   $ aoox env unset A B --set shared --env staging
 ```
 
-_See code: [src/commands/env/unset.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/env/unset.ts)_
+_See code: [src/commands/env/unset.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/env/unset.ts)_
 
 ## `aoox exec`
 
@@ -731,7 +731,7 @@ EXAMPLES
   $ aoox exec --stack blog --service web
 ```
 
-_See code: [src/commands/exec.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/exec.ts)_
+_See code: [src/commands/exec.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/exec.ts)_
 
 ## `aoox help [COMMAND]`
 
@@ -799,7 +799,7 @@ EXAMPLES
   sudo aoox install --force --new-secrets --wipe-data   # start from scratch (deletes all panel data)
 ```
 
-_See code: [src/commands/install.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/install.ts)_
+_See code: [src/commands/install.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/install.ts)_
 
 ## `aoox link`
 
@@ -826,7 +826,7 @@ EXAMPLES
   $ aoox link --project <id> --app <id>
 ```
 
-_See code: [src/commands/link.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/link.ts)_
+_See code: [src/commands/link.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/link.ts)_
 
 ## `aoox login`
 
@@ -852,7 +852,7 @@ EXAMPLES
   $ aoox login --url 203.0.113.10:3000 --token aoox_xxx
 ```
 
-_See code: [src/commands/login.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/login.ts)_
+_See code: [src/commands/login.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/login.ts)_
 
 ## `aoox logs`
 
@@ -896,7 +896,7 @@ EXAMPLES
   $ aoox logs --deployment latest
 ```
 
-_See code: [src/commands/logs.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/logs.ts)_
+_See code: [src/commands/logs.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/logs.ts)_
 
 ## `aoox plugins`
 
@@ -1234,7 +1234,7 @@ EXAMPLES
   $ aoox registry build myapp:1.0.0 --force
 ```
 
-_See code: [src/commands/registry/build.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/registry/build.ts)_
+_See code: [src/commands/registry/build.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/registry/build.ts)_
 
 ## `aoox registry domain`
 
@@ -1260,7 +1260,7 @@ EXAMPLES
   $ aoox registry domain --clear
 ```
 
-_See code: [src/commands/registry/domain.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/registry/domain.ts)_
+_See code: [src/commands/registry/domain.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/registry/domain.ts)_
 
 ## `aoox registry password`
 
@@ -1287,7 +1287,7 @@ EXAMPLES
   $ aoox registry password --reset --yes
 ```
 
-_See code: [src/commands/registry/password.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/registry/password.ts)_
+_See code: [src/commands/registry/password.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/registry/password.ts)_
 
 ## `aoox registry push [IMAGE]`
 
@@ -1327,7 +1327,7 @@ EXAMPLES
   $ aoox registry push myapp:1.0.0 --force
 ```
 
-_See code: [src/commands/registry/push.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/registry/push.ts)_
+_See code: [src/commands/registry/push.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/registry/push.ts)_
 
 ## `aoox reinstall`
 
@@ -1357,7 +1357,7 @@ EXAMPLES
   sudo aoox reinstall --yes --terminal-ssh-user root
 ```
 
-_See code: [src/commands/reinstall.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/reinstall.ts)_
+_See code: [src/commands/reinstall.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/reinstall.ts)_
 
 ## `aoox run`
 
@@ -1402,7 +1402,7 @@ EXAMPLES
   $ aoox run --quiet -- npm run dev
 ```
 
-_See code: [src/commands/run.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/run.ts)_
+_See code: [src/commands/run.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/run.ts)_
 
 ## `aoox update`
 
@@ -1424,7 +1424,7 @@ EXAMPLES
   $ aoox update --check
 ```
 
-_See code: [src/commands/update.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/update.ts)_
+_See code: [src/commands/update.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/update.ts)_
 
 ## `aoox update panel`
 
@@ -1449,7 +1449,7 @@ EXAMPLES
   $ aoox update panel --apply
 ```
 
-_See code: [src/commands/update/panel.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/update/panel.ts)_
+_See code: [src/commands/update/panel.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/update/panel.ts)_
 
 ## `aoox whoami`
 
@@ -1476,7 +1476,7 @@ EXAMPLES
   $ aoox whoami --json
 ```
 
-_See code: [src/commands/whoami.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.1/src/commands/whoami.ts)_
+_See code: [src/commands/whoami.ts](https://github.com/hideandseeklab/aoox-cli/blob/v0.1.2/src/commands/whoami.ts)_
 <!-- commandsstop -->
 
 ## Versioning
